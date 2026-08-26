@@ -1,0 +1,75 @@
+---
+title: "Bajade_Denisse_Lab1.Rmd"
+output: html_document
+date: "2026-08-26"
+---
+# BIO 118 Laboratory Exer 1
+## Denisse Gabrielle Bajade, B1 08/26/2026
+
+# Introduction
+
+R markdown is a tool that combines text, R code and the output produced by the code in one document. It allows data to be documented in a clear and reproducible way. In this lab exer, I created and rendered an R Markdown docs, explored the basic components of R markdown and organized the files in my BIO 118 Project.
+
+# Getting Started with R and RStudio
+
+2.2 Perform Basic Operations
+
+# Guide Questions
+
+1. What is the output of 2 + 2? 
+- [1] 4
+
+2. What is the output of sum(1:4)?
+- [1] 10
+
+3. What appears in the Environment pane after creating fish_lengths?
+- A table containing the fish lengths value appeared in the environment pane.
+
+4. What does the command plot(fish_lengths) produce?
+- A scattered plot showing the fish lengths demand vs time appeared in the output pane after it was run. 
+
+5. Why is it preferable to keep commands in an R script rather than entering all commands directly into the Console?
+- It is preferable to keep commands in an R script because the commands can be saved, reviewed, edited, and rerun easily. This also makes the work organized and reproducible, unlike entering commands directly into the Console, where they can be lost or difficult to repeat.
+
+6. What is the output of 2 + 5?
+- [1] 7
+
+7. What happens in the Environment pane after running a <- 1 + 2?
+- It displayed a table showing the value of a which is 3.
+
+8. What is printed in the Console when you run a?
+- [1] 3
+
+9. What is the advantage of editing and saving commands in an R script?
+- The advantage of editing and saving commands in an R script is that you can easily modify, save, review, and rerun the commands whenever needed. It also helps keep your work organized and reproducible.
+
+2.5. Explore a Built-in Biological Dataset
+
+10. How many observations are in the BOD dataset?
+- 6 
+
+11. How many variables are in the dataset?
+- 2
+
+12. What are the names of the two variables?
+- Time and demand
+
+13. What are the units of Time and demand?
+- Time: days, demand:  mg/l
+
+14. What type of graph is produced by plot(BOD)?
+- Scatter plot
+
+15. Why is this type of graph appropriate for examining the relationship between the variables?
+- This type of graph is appropriate because a scatter plot shows the relationship between two numerical variables. It helps us see whether there is a pattern, trend, or correlation between Time and demand. 
+
+```{r}
+data(BOD)
+BOD
+str(BOD)
+plot(BOD)
+```
+
+# Conclusion
+
+In this laboratory exercise, I created and rendered an R Markdown document and practiced using Markdown text and R code chunks. I also explored the BOD dataset, examined its structure, and generated a plot. Finally, I organized the laboratory files within the BIO 118 project to follow basic principles of reproducible research.
