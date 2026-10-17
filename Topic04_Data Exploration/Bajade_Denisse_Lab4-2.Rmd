@@ -1,0 +1,459 @@
+---
+title: "Bajade_Denisse_Lab4-2"
+author: "Denisse Gabrielle C. Bajade"
+date: "2026-10-17"
+output: html_document
+---
+
+# Student Information
+
+**Name:** Denisse Gabrielle C. Bajade  
+**Course:** BS Biology  
+**Laboratory Exercise:** 4C  
+**GitHub:** https://github.com/dcbajade/BIO118
+
+# BIO 118 Laboratory Exercise 4C: Multivariate Analysis: PCA and Clustering
+
+## 4.1 Loading and Exploring the `iris` Dataset
+
+```{r setup, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggfortify)
+
+data(iris)
+head(iris)
+str(iris)
+summary(iris)
+dim(iris)
+```
+
+### Guide Questions 1–4
+
+1. **How many observations are in the iris dataset?**  
+   The dataset contains 150 observations, with each row representing one iris flower.
+
+2. **Which variables are numerical?**  
+   `Sepal.Length`, `Sepal.Width`, `Petal.Length`, and `Petal.Width` are numerical variables.
+
+3. **Which variable is categorical?**  
+   `Species` is categorical because it identifies the flower species.
+
+4. **Why will the Species variable not be included when performing PCA?**  
+   PCA uses numerical measurements to calculate principal components. `Species` is a categorical label, so it is excluded from the calculation and added afterward to help interpret the plot.
+
+## 4.2 Principal Component Analysis (PCA)
+
+### 4.2.1 Select the numerical variables
+
+```{r iris-select}
+iris_data <- iris[, 1:4]
+head(iris_data)
+```
+
+### 4.2.2 Perform PCA
+
+```{r iris-pca}
+pca_result <- prcomp(iris_data, center = TRUE, scale. = TRUE)
+
+names(pca_result)
+str(pca_result)
+head(pca_result$x)
+summary(pca_result)
+```
+
+### Guide Questions 5–9
+
+5. **Which principal component explains the greatest proportion of variation?**  
+   PC1 explains the greatest proportion of variation.
+
+6. **What proportion of the total variation is explained by PC1?**  
+   PC1 explains approximately 72.96% of the total variation.
+
+7. **What proportion of the total variation is explained by PC2?**  
+   PC2 explains approximately 22.85% of the total variation.
+
+8. **What percentage of the total variation is explained by PC1 and PC2 together?**  
+   Together, PC1 and PC2 explain approximately 95.81% of the total variation.
+
+9. **Why might PC1 and PC2 be useful for visualizing the iris dataset?**  
+   They retain about 95.81% of the variation in the four measurements, so a two-dimensional plot provides a useful summary of the dataset.
+
+### 4.2.3 Visualize the PCA results
+
+```{r iris-pca-plot}
+pca_scores <- as.data.frame(pca_result$x)
+pca_scores$Species <- iris$Species
+head(pca_scores)
+
+ggplot(pca_scores, aes(x = PC1, y = PC2, color = Species)) +
+  geom_point(size = 2) +
+  labs(
+    title = "PCA of Iris Measurements",
+    x = "PC1",
+    y = "PC2",
+    color = "Species"
+  ) +
+  theme_classic()
+```
+
+### Guide Questions 10–13
+
+10. **Do the three species appear to form distinct groups in the PCA plot?**  
+    They form visible groups, but the separation is not equally clear for all three species.
+
+11. **Which species appears most clearly separated from the others?**  
+    Setosa appears most clearly separated from versicolor and virginica.
+
+12. **Which species show greater overlap?**  
+    Versicolor and virginica show greater overlap.
+
+13. **What does the PCA plot suggest about the similarities and differences among the iris species?**  
+    Setosa has a distinct pattern in its measurements. Versicolor and virginica are more similar in some measurements, which causes some overlap in the PCA plot.
+
+### 4.2.4 Visualize the PCA biplot using `ggfortify`
+
+```{r iris-biplot, message=FALSE, warning=FALSE}
+pca_model <- prcomp(iris[, 1:4], center = TRUE, scale. = TRUE)
+
+autoplot(
+  pca_model,
+  data = iris,
+  colour = "Species",
+  loadings = TRUE,
+  loadings.label = TRUE,
+  loadings.colour = "black",
+  loadings.label.colour = "black"
+) +
+  theme_minimal() +
+  labs(
+    title = "Principal Component Analysis (PCA) on Iris Dataset",
+    subtitle = "Four measurements summarized in principal component space",
+    caption = "Data source: built-in R iris dataset",
+    colour = "Flower Species"
+  )
+```
+
+The points represent individual flowers, while the arrows represent the original measurements. Longer arrows indicate variables that are more strongly represented in the displayed component space. Arrows pointing in similar directions suggest positive association, while arrows pointing in opposite directions suggest negative association. These interpretations apply to the displayed PCA dimensions.
+
+## 4.3 Hierarchical Clustering
+
+### 4.3.1 Standardize the numerical variables and calculate distances
+
+```{r iris-distance}
+iris_scaled <- scale(iris_data)
+dist_matrix <- dist(iris_scaled, method = "euclidean")
+```
+
+### Guide Question 14
+
+14. **What does a small distance between two observations indicate?**  
+    A small distance indicates that the two flowers have similar standardized measurements across the four numerical variables.
+
+### 4.3.2 Perform hierarchical clustering
+
+```{r iris-hclust}
+hclust_result <- hclust(dist_matrix, method = "complete")
+```
+
+### 4.3.3 Visualize the dendrogram
+
+```{r iris-dendrogram}
+plot(
+  hclust_result,
+  labels = FALSE,
+  main = "Hierarchical Clustering of Iris Flowers",
+  xlab = "Observations",
+  ylab = "Height"
+)
+```
+
+A lower joining height indicates greater similarity, while a higher joining height indicates greater dissimilarity. The height represents the dissimilarity at which observations or clusters are joined, not the physical height of the flowers.
+
+### Guide Questions 15–17
+
+15. **What does a short joining height indicate about two observations or groups?**  
+    It indicates that the observations or groups are relatively similar.
+
+16. **What does a large joining height indicate?**  
+    It indicates that the observations or groups being joined are more dissimilar.
+
+17. **Looking at the dendrogram, do some observations appear to form groups before being joined with the rest of the dataset?**  
+    Yes. The dendrogram shows smaller groups joining at lower heights before they become part of larger groups. The height of each join indicates how dissimilar the groups are when they merge.
+
+### 4.3.4 Create three clusters
+
+```{r iris-hclust-clusters}
+groups <- cutree(hclust_result, k = 3)
+
+plot(
+  hclust_result,
+  labels = FALSE,
+  main = "Hierarchical Clustering of Iris Flowers (3 Clusters)",
+  xlab = "Observations",
+  ylab = "Height"
+)
+rect.hclust(hclust_result, k = 3, border = 2:4)
+
+iris$Cluster <- as.factor(groups)
+head(iris)
+table(iris$Species, iris$Cluster)
+```
+
+### Guide Questions 18–20
+
+18. **Which species appears to correspond most closely to one cluster?**  
+    Setosa corresponds most closely to one cluster because its measurements are relatively distinct from those of the other two species.
+
+19. **Are any species distributed across more than one cluster?**  
+    Yes. Versicolor and virginica may be distributed across multiple clusters because some of their measurements overlap. The contingency table shows the exact distribution for this run.
+
+20. **What does this tell you about the similarity between the species based on their measured characteristics?**  
+    The measurements distinguish setosa more clearly, while versicolor and virginica have more similarities. The clusters reflect numerical similarity rather than the known species labels.
+
+## 4.4 K-means Clustering
+
+### 4.4.1 Perform K-means clustering
+
+```{r iris-kmeans}
+set.seed(123)
+
+kmeans_result <- kmeans(
+  iris_scaled,
+  centers = 3,
+  nstart = 20
+)
+
+kmeans_result
+names(kmeans_result)
+head(kmeans_result$cluster)
+
+iris$KMeans_Cluster <- as.factor(kmeans_result$cluster)
+head(iris)
+table(iris$Species, iris$KMeans_Cluster)
+```
+
+### 4.4.2 Visualize K-means clustering
+
+```{r iris-kmeans-plot}
+ggplot(
+  iris,
+  aes(x = Petal.Length, y = Petal.Width, color = KMeans_Cluster)
+) +
+  geom_point(size = 2) +
+  labs(
+    title = "K-means Clustering of Iris Flowers",
+    x = "Petal Length (cm)",
+    y = "Petal Width (cm)",
+    color = "Cluster"
+  ) +
+  theme_classic()
+
+table(iris$Species, iris$KMeans_Cluster)
+```
+
+The K-means clusters were calculated using all four standardized measurements. Petal length and petal width are only the two variables used to display the resulting assignments in this plot. Cluster numbers are labels and do not inherently represent particular species.
+
+### Guide Questions 21–29
+
+21. **Do the K-means clusters appear to form distinct groups?**  
+    Yes. Setosa forms a particularly distinct group, while the other two species have more overlap.
+
+22. **Which species show greater overlap between clusters?**  
+    Versicolor and virginica show greater overlap because their measurements are more similar in some observations.
+
+23. **Which species corresponds most closely to one K-means cluster?**  
+    Setosa corresponds most closely to one cluster, as shown by the contingency table.
+
+24. **Are any species divided between two clusters?**  
+    Yes. Versicolor and virginica can be divided between two clusters. The contingency table shows how many observations from each species fall into each cluster.
+
+25. **How are the K-means results similar to or different from the hierarchical clustering results?**  
+    Both methods can identify a distinct group of setosa. The assignments for versicolor and virginica may differ because hierarchical clustering builds a tree, while K-means partitions observations around cluster centers.
+
+26. **How did PCA help you visualize patterns that would be difficult to see using the four original variables simultaneously?**  
+    PCA summarized the four measurements in two dimensions while retaining most of the variation. This made the overall grouping and overlap easier to visualize.
+
+27. **How did hierarchical clustering represent relationships among observations differently from PCA?**  
+    PCA represents observations on new axes that summarize variation. Hierarchical clustering represents nested relationships among observations and groups in a dendrogram.
+
+28. **How did K-means clustering differ from hierarchical clustering?**  
+    K-means directly assigns observations to a chosen number of clusters. Hierarchical clustering builds a tree of nested groups that can be cut to obtain a selected number of clusters.
+
+29. **Did the PCA plot, hierarchical clustering, and K-means clustering reveal broadly similar patterns in the iris dataset? Explain using evidence from your results.**  
+    Broadly, the methods show that setosa is more distinct from the other species, while versicolor and virginica overlap more. The PCA plot shows this visually, and the clustering contingency tables show how the observations were assigned. The exact cluster assignments differ because each method uses a different approach.
+
+## 4.5 Practice Exercise: Multivariate Analysis Using `airquality`
+
+### Practice 1. Load and inspect the dataset
+
+```{r air-load}
+data(airquality)
+head(airquality)
+str(airquality)
+summary(airquality)
+```
+
+**Which variables are numerical, and which variables will you use for the multivariate analysis?**
+
+`Ozone`, `Solar.R`, `Wind`, and `Temp` are the four numerical measurements selected for analysis. `Month` and `Day` identify when each observation was recorded and can be used afterward to help interpret patterns.
+
+### Practice 2. Handle missing values
+
+```{r air-missing}
+colSums(is.na(airquality))
+
+air_data <- airquality[, c("Ozone", "Solar.R", "Wind", "Temp")]
+air_complete <- na.omit(air_data)
+
+dim(air_data)
+dim(air_complete)
+head(air_complete)
+```
+
+**Why is it necessary to deal with missing values before performing PCA and clustering?**
+
+PCA and distance-based clustering need complete numerical measurements for the observations being analyzed. Removing incomplete rows ensures that the calculations use observations with all four selected variables recorded. This also reduces the number of observations available for analysis, so the removed rows should be acknowledged.
+
+### Practice 3. Perform PCA
+
+```{r air-pca}
+air_pca <- prcomp(air_complete, center = TRUE, scale. = TRUE)
+
+names(air_pca)
+head(air_pca$x)
+summary(air_pca)
+
+air_pca_summary <- summary(air_pca)
+air_pc12_variance <- sum(air_pca_summary$importance[2, 1:2])
+air_pc12_variance
+```
+
+**How much of the total variation is explained by PC1 and PC2 together?**
+
+PC1 and PC2 together explain 81.36% of the total variation in the dataset (PC1 explains 59.00% and PC2 explains 22.37%).
+
+**Does this suggest that the two-dimensional PCA plot provides a useful summary?**
+
+Yes, it suggests that the two-dimensional PCA plot provides a very useful summary. Because PC1 and PC2 account for over 81% of the total variance, a 2D scatter plot retains the vast majority of the information from all four original physical measurements while reducing dimensionality.
+
+### Practice 4. Create a PCA plot
+
+```{r air-pca-plot}
+air_pca_scores <- as.data.frame(air_pca$x)
+
+ggplot(air_pca_scores, aes(x = PC1, y = PC2)) +
+  geom_point() +
+  labs(
+    title = "PCA of Air Quality Measurements",
+    x = "PC1",
+    y = "PC2"
+  ) +
+  theme_classic()
+```
+
+**Do you see any apparent groups or patterns in the PCA plot?**
+
+Based on the plot, the observations do not form distinct, isolated clusters or separate species-like groups. Instead, they appear as a continuous, broad cloud of points with visible spread along both PC1 and PC2 axes. Rather than discrete groups, there is a clear continuous gradient across the principal component space, reflecting gradual changes in the combined air-quality measurements rather than distinct categorical groups.
+
+### Practice 5. Add Month to the PCA plot
+
+```{r air-pca-month}
+air_complete_data <- airquality[
+  complete.cases(airquality[, c("Ozone", "Solar.R", "Wind", "Temp")]),
+]
+
+stopifnot(nrow(air_complete_data) == nrow(air_pca_scores))
+air_pca_scores$Month <- factor(air_complete_data$Month)
+
+ggplot(air_pca_scores, aes(x = PC1, y = PC2, color = Month)) +
+  geom_point() +
+  labs(
+    title = "PCA of Air Quality Measurements",
+    x = "PC1",
+    y = "PC2",
+    color = "Month"
+  ) +
+  theme_classic()
+```
+
+**Do observations from different months appear to occupy different regions of the PCA plot? Describe the pattern you observe.**
+
+Observations from warmer summer months (July and August) shift toward higher PC1 values on the right, whereas cooler months (May and September) concentrate on the left, reflecting a clear seasonal gradient in air quality measurements.
+
+### Practice 6. Hierarchical clustering
+
+```{r air-hclust}
+air_scaled <- scale(air_complete)
+air_dist <- dist(air_scaled, method = "euclidean")
+air_hclust <- hclust(air_dist, method = "complete")
+
+plot(
+  air_hclust,
+  labels = FALSE,
+  main = "Hierarchical Clustering of Air Quality Observations",
+  xlab = "Observations",
+  ylab = "Height"
+)
+```
+
+**Do the observations appear to form groups in the dendrogram? Describe what you observe.**
+
+Yes, observations form distinct hierarchical groups: similar daily measurements merge into small sub-clusters at lower heights (below 2.0) before combining into two main primary branches at a high dissimilarity height above 7.0.
+
+### Practice 7. K-means clustering
+
+```{r air-kmeans}
+set.seed(123)
+
+air_kmeans <- kmeans(
+  air_scaled,
+  centers = 3,
+  nstart = 20
+)
+
+air_pca_scores$Cluster <- as.factor(air_kmeans$cluster)
+
+ggplot(air_pca_scores, aes(x = PC1, y = PC2, color = Cluster)) +
+  geom_point() +
+  labs(
+    title = "K-means Clusters in PCA Space: Air Quality",
+    x = "PC1",
+    y = "PC2",
+    color = "K-means Cluster"
+  ) +
+  theme_classic()
+```
+
+**Do the K-means clusters correspond to visibly different regions of the PCA plot?**
+
+Yes, the three K-means clusters partition the PCA plot into visibly distinct, non-overlapping regions, where Cluster 1 occupies the lower-left region, Cluster 2 spans the top-center area, and Cluster 3 covers the far right side.
+
+**Compare the K-means plot with your hierarchical clustering dendrogram. Do the two methods appear to identify similar patterns?**
+
+Both methods identify similar broad patterns by partitioning the observations into three comparable groups of environmental conditions, though their specific boundaries differ slightly due to K-means using distance-to-centroid partitioning versus complete linkage using maximum pairwise distances.
+
+### Practice 8. Relate clusters to Month
+
+```{r air-cluster-month}
+air_cluster_results <- air_complete_data
+air_cluster_results$KMeans_Cluster <- as.factor(air_kmeans$cluster)
+
+month_cluster_table <- table(
+  Month = air_cluster_results$Month,
+  KMeans_Cluster = air_cluster_results$KMeans_Cluster
+)
+
+month_cluster_table
+```
+
+**Do some months appear more frequently in particular clusters?**
+
+Yes, the table shows clear monthly concentrations: Month 5 (May) and Month 9 (September) are heavily concentrated in Clusters 1 and 2 (with Month 9 peaking at 16 observations in Cluster 2), whereas Month 7 (July) and Month 8 (August) have the highest frequencies in Cluster 3 (13 and 9 observations, respectively).
+
+**Do the clusters appear to be associated with particular months? What does this pattern suggest about variation in air-quality measurements across months?**
+
+Yes, the clusters show a strong association with specific months, which suggests that variation in air-quality measurements is strongly influenced by seasonal changes, where peak summer months (July and August) experience distinct weather patterns compared to late spring and early autumn (May and September).
+
+## Conclusion
+
+In this exercise, I used PCA to summarize variation across several numerical variables and used hierarchical and K-means clustering to explore similarities among observations. The iris dataset showed how multivariate methods can reveal patterns that correspond partly to known species. The airquality analysis applied the same workflow to environmental measurements while accounting for missing values. The plots and tables need to be interpreted together, because each method summarizes or groups the data in a different way.

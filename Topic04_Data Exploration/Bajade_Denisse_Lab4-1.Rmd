@@ -1,0 +1,840 @@
+---
+title: "Bajade_Denisse_Lab4-1"
+author: "Denisse Gabrielle C. Bajade"
+date: "2026-10-10"
+output: html_document
+---
+
+# Student Information
+
+**Name:** Denisse Gabrielle C. Bajade  
+**Course:** BS Biology  
+**Laboratory Exercise:** 4A and 4B  
+**GitHub:** https://github.com/dcbajade/BIO118
+
+# BIO 118 Laboratory Exercise 4A: Data Visualization Using ggplot2
+
+## 4.1–4.3 Getting Started and Exploring the Data
+
+```{r setup, message=FALSE, warning=FALSE}
+library(tidyverse)
+
+head(iris)
+str(iris)
+head(airquality)
+str(airquality)
+```
+
+## 4.4 Creating a Basic ggplot2 Visualization
+
+### 4.4.1 Initialize the plot
+
+```{r initialize-plot}
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width))
+```
+
+## 4.5 Adding a Geometry
+
+### 4.5.1 Scatter plot: `geom_point()`
+
+```{r basic-scatter}
+ggplot(
+  data = iris,
+  aes(x = Sepal.Length, y = Sepal.Width)
+) +
+  geom_point()
+```
+
+### Scatter plot colored by species
+
+```{r scatter-species}
+ggplot(
+  iris,
+  aes(x = Sepal.Length, y = Sepal.Width, color = Species)
+) +
+  geom_point() +
+  labs(
+    title = "Sepal Length and Sepal Width",
+    x = "Sepal Length (cm)",
+    y = "Sepal Width (cm)",
+    color = "Iris Species"
+  )
+```
+
+### 4.5.2 Line plot: `geom_line()`
+
+```{r line-temperature}
+ggplot(
+  airquality,
+  aes(x = Day, y = Temp)
+) +
+  geom_line() +
+  labs(
+    title = "Daily Temperature in New York",
+    x = "Day of the Month",
+    y = "Temperature (°F)"
+  ) +
+  theme_classic()
+```
+
+### Line plot grouped by month
+
+```{r line-temperature-month}
+ggplot(
+  airquality,
+  aes(
+    x = Day,
+    y = Temp,
+    group = factor(Month),
+    color = factor(Month)
+  )
+) +
+  geom_line() +
+  labs(
+    title = "Daily Temperature by Month",
+    x = "Day of the Month",
+    y = "Temperature (°F)",
+    color = "Month"
+  ) +
+  theme_classic()
+```
+
+### 4.5.3 Bar plot: `geom_bar()`
+
+```{r bar-species}
+ggplot(
+  iris[25:130, ],
+  aes(x = Species, fill = Species)
+) +
+  geom_bar() +
+  labs(
+    title = "Number of Iris Observations by Species",
+    x = "Species",
+    y = "Count",
+    fill = "Species"
+  ) +
+  theme_classic()
+```
+
+### 4.5.4 Histogram: `geom_histogram()`
+
+```{r histogram-sepal}
+ggplot(iris, aes(x = Sepal.Length)) +
+  geom_histogram(
+    binwidth = 0.5,
+    fill = "lightblue",
+    color = "black"
+  ) +
+  labs(
+    title = "Distribution of Iris Sepal Length",
+    x = "Sepal Length (cm)",
+    y = "Frequency"
+  ) +
+  theme_classic()
+```
+
+### 4.5.5 Box plot: `geom_boxplot()`
+
+```{r boxplot-sepal}
+ggplot(
+  iris,
+  aes(x = Species, y = Sepal.Length, fill = Species)
+) +
+  geom_boxplot() +
+  labs(
+    title = "Sepal Length by Iris Species",
+    x = "Species",
+    y = "Sepal Length (cm)",
+    fill = "Species"
+  ) +
+  theme_classic()
+```
+
+### 4.5.6 Bar plot using existing values: `geom_col()`
+
+```{r mean-petal}
+mean_petal <- aggregate(Petal.Length ~ Species, data = iris, FUN = mean)
+mean_petal
+
+ggplot(
+  mean_petal,
+  aes(x = Species, y = Petal.Length, fill = Species)
+) +
+  geom_col() +
+  labs(
+    title = "Mean Petal Length by Iris Species",
+    x = "Species",
+    y = "Mean Petal Length (cm)",
+    fill = "Species"
+  ) +
+  theme_classic()
+```
+
+### 4.5.7 Adding a trend line: `geom_smooth()`
+
+```{r trend-line}
+ggplot(
+  iris,
+  aes(x = Sepal.Length, y = Sepal.Width, color = Species)
+) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "Sepal Length and Sepal Width with Linear Trends",
+    x = "Sepal Length (cm)",
+    y = "Sepal Width (cm)",
+    color = "Iris Species"
+  ) +
+  theme_classic()
+```
+
+### 4.5.8 Heatmaps: `geom_tile()`
+
+```{r sample-heatmap}
+temperature_data <- data.frame(
+  Site = rep(c("Site A", "Site B", "Site C"), each = 3),
+  Month = rep(c("June", "July", "August"), times = 3),
+  Temperature = c(27.2, 28.1, 28.5, 26.8, 27.5, 28.0, 29.0, 29.4, 30.1)
+)
+
+temperature_data
+
+ggplot(
+  temperature_data,
+  aes(x = Site, y = Month, fill = Temperature)
+) +
+  geom_tile() +
+  labs(
+    title = "Water Temperature by Site and Month",
+    x = "Sampling Site",
+    y = "Month",
+    fill = "Temperature (°C)"
+  ) +
+  theme_minimal()
+```
+
+## 4.6 Customizing a Plot
+
+### 4.6.1 Add titles and labels using `labs()`
+
+```{r labs-example}
+ggplot(
+  iris,
+  aes(x = Sepal.Length, y = Sepal.Width, color = Species)
+) +
+  geom_point() +
+  labs(
+    title = "Sepal Length and Sepal Width",
+    subtitle = "Measurements of three Iris species",
+    x = "Sepal Length (cm)",
+    y = "Sepal Width (cm)",
+    caption = "Data from the iris dataset",
+    color = "Species"
+  )
+```
+
+### 4.6.2 Annotating a plot with `annotate()`
+
+```{r labels-annotation}
+ggplot(
+  iris,
+  aes(x = Petal.Length, y = Petal.Width, color = Species)
+) +
+  geom_point() +
+  annotate(
+    "text",
+    x = 6,
+    y = 2.5,
+    label = "Large petal dimensions"
+  ) +
+  labs(
+    title = "Petal Length and Petal Width",
+    x = "Petal Length (cm)",
+    y = "Petal Width (cm)",
+    color = "Iris Species"
+  ) +
+  theme_classic()
+```
+
+### 4.6.3 Faceting: `facet_wrap()`
+
+```{r faceting}
+ggplot(
+  iris,
+  aes(x = Sepal.Length, y = Sepal.Width, color = Species)
+) +
+  geom_point() +
+  facet_wrap(~ Species) +
+  labs(
+    title = "Sepal Measurements by Iris Species",
+    x = "Sepal Length (cm)",
+    y = "Sepal Width (cm)"
+  ) +
+  theme_minimal()
+```
+
+### 4.6.4 Applying simple themes
+
+```{r theme-examples}
+theme_plot <- ggplot(
+  iris,
+  aes(x = Sepal.Length, y = Sepal.Width, color = Species)
+) +
+  geom_point() +
+  labs(
+    title = "Sepal Length and Sepal Width",
+    x = "Sepal Length (cm)",
+    y = "Sepal Width (cm)",
+    color = "Species"
+  )
+
+theme_plot + theme_minimal()
+theme_plot + theme_classic()
+theme_plot + theme_bw()
+theme_plot + theme_void()
+```
+
+### 4.6.5 Combining multiple layers
+
+```{r combined-layers}
+ggplot(
+  iris,
+  aes(x = Sepal.Length, y = Sepal.Width, color = Species)
+) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "Relationship Between Sepal Length and Sepal Width",
+    x = "Sepal Length (cm)",
+    y = "Sepal Width (cm)",
+    color = "Iris Species"
+  ) +
+  theme_classic()
+```
+
+## 4.7 Saving a Plot: `ggsave()`
+
+The selected plot is saved in Exercise 9 below using `ggsave()` with a JPEG filename and 300 dpi.
+
+## 4.8 Practice Exercises: `airquality`
+
+### Exercise 1. Scatter plot of Wind and Ozone 
+
+```{r ex4a-1}
+wind_ozone_plot <- ggplot(
+  airquality,
+  aes(x = Wind, y = Ozone, color = factor(Month))
+) +
+  geom_point(na.rm = TRUE) +
+  labs(
+    title = "Relationship Between Wind Speed and Ozone",
+    x = "Wind Speed (mph)",
+    y = "Ozone Concentration (ppb)",
+    color = "Month"
+  ) +
+  theme_classic()
+
+wind_ozone_plot
+```
+
+### Exercise 2. Line plot of Ozone across days 
+
+```{r ex4a-2}
+ggplot(
+  airquality,
+  aes(
+    x = Day,
+    y = Ozone,
+    group = factor(Month),
+    color = factor(Month)
+  )
+) +
+  geom_line(na.rm = TRUE) +
+  labs(
+    title = "Daily Ozone Levels by Month",
+    x = "Day of the Month",
+    y = "Ozone Concentration (ppb)",
+    color = "Month"
+  ) +
+  theme_classic()
+```
+
+### Exercise 3. Histogram of Wind 
+
+```{r ex4a-3}
+wind_histogram <- ggplot(airquality, aes(x = Wind)) +
+  geom_histogram(
+    binwidth = 2,
+    fill = "lightblue",
+    color = "black",
+    na.rm = TRUE
+  ) +
+  labs(
+    title = "Distribution of Wind Speed",
+    x = "Wind Speed (mph)",
+    y = "Frequency"
+  ) +
+  theme_classic()
+
+wind_histogram
+```
+
+**Interpretation:** Most wind-speed observations fall in the middle of the observed range, while fewer observations occur at the lowest and highest speeds. The histogram helps show the distribution and spread of wind speed.
+
+### Exercise 4. Box plot of temperature by month 
+
+**Part A**
+
+```{r ex4a-4}
+ggplot(
+  airquality,
+  aes(x = factor(Month), y = Temp, fill = factor(Month))
+) +
+  geom_boxplot(na.rm = TRUE) +
+  labs(
+    title = "Temperature Distribution by Month",
+    x = "Month",
+    y = "Temperature (°F)",
+    fill = "Month"
+  ) +
+  theme_classic()
+```
+
+### Exercise 5. Wind and temperature with a linear trend line 
+
+```{r ex4a-5}
+ggplot(airquality, aes(x = Wind, y = Temp)) +
+  geom_point(na.rm = TRUE) +
+  geom_smooth(method = "lm", se = FALSE, na.rm = TRUE) +
+  labs(
+    title = "Relationship Between Wind Speed and Temperature",
+    x = "Wind Speed (mph)",
+    y = "Temperature (°F)"
+  ) +
+  theme_classic()
+```
+
+### Exercise 6. Faceted scatter plot of Wind and Ozone 
+
+```{r ex4a-6}
+ggplot(airquality, aes(x = Wind, y = Ozone)) +
+  geom_point(na.rm = TRUE) +
+  facet_wrap(~ Month) +
+  labs(
+    title = "Wind Speed and Ozone by Month",
+    x = "Wind Speed (mph)",
+    y = "Ozone Concentration (ppb)"
+  ) +
+  theme_bw()
+```
+
+### Exercise 7. Bar plot of mean temperature by month 
+
+```{r ex4a-7}
+mean_temp <- aggregate(
+  Temp ~ Month,
+  data = airquality,
+  FUN = mean,
+  na.rm = TRUE
+)
+mean_temp$Month <- factor(mean_temp$Month)
+mean_temp
+
+ggplot(
+  mean_temp,
+  aes(x = Month, y = Temp, fill = Month)
+) +
+  geom_col() +
+  labs(
+    title = "Mean Temperature by Month",
+    x = "Month",
+    y = "Mean Temperature (°F)",
+    fill = "Month"
+  ) +
+  theme_classic()
+```
+
+### Exercise 8. Heatmap of temperature by day and month 
+
+```{r ex4a-8}
+ggplot(
+  airquality,
+  aes(x = Day, y = factor(Month), fill = Temp)
+) +
+  geom_tile() +
+  labs(
+    title = "Daily Temperature Across Months",
+    x = "Day of the Month",
+    y = "Month",
+    fill = "Temperature (°F)"
+  ) +
+  theme_bw()
+```
+
+The following code identifies the observation with the highest recorded temperature:
+
+```{r ex4a-8-highest}
+highest_temp <- airquality[which.max(airquality$Temp), c("Month", "Day", "Temp")]
+highest_temp
+```
+
+The maximum recorded temperature is **`r max(airquality$Temp, na.rm = TRUE)` °F**. The first observation with this temperature is in **Month `r airquality$Month[which.max(airquality$Temp)]`, Day `r airquality$Day[which.max(airquality$Temp)]`**.
+
+### Exercise 9. Save a plot using `ggsave()` 
+
+```{r ex4a-9, eval=FALSE}
+ggsave(
+  filename = "Bajade_Denisse_Plot.jpeg",
+  plot = wind_ozone_plot,
+  width = 7,
+  height = 5,
+  units = "in",
+  dpi = 300
+)
+```
+
+# BIO 118 Laboratory Exercise 4B: Exploratory Data Analysis
+
+## 4.1 Loading and Exploring the WHO Dataset
+
+```{r who-load, message=FALSE, warning=FALSE}
+data("who", package = "tidyr")
+
+glimpse(who)
+head(who)
+dim(who)
+```
+
+### Guide Questions 1–5
+
+1. **How many observations and variables are in the dataset?**  
+   The WHO dataset contains 7,240 observations and 60 variables. Each observation represents a country-year record, while the variables include country identifiers, year, and different TB case categories.
+
+2. **Which variables identify the country and year?**  
+   `country`, `iso2`, and `iso3` identify the country. `year` identifies the year of the record.
+
+3. **Which variables contain information about TB cases?**  
+   The columns beginning with names such as `new_sp`, `new_sn`, `new_ep`, and `newrel` contain TB case information.
+
+4. **What types of variables are country and year?**  
+   `country` is character data, while `year` is numeric.
+
+5. **What do you notice about the structure of the TB case variables?**  
+   The TB case information is stored in many separate columns. The column names encode diagnosis category, sex, and age group, so the dataset is initially in a wide format.
+
+## 4.2 Examining Missing Data
+
+```{r who-missing}
+missing_by_column <- colSums(is.na(who))
+missing_by_column
+```
+
+### Guide Questions 6–8
+
+6. **Which variables contain missing values?**  
+   The output above identifies the variables with missing values. Several TB case columns contain missing values, and `iso2` also has some missing entries.
+
+7. **Are missing values common or uncommon in the TB case variables?**  
+   They are common in many TB case columns. The counts show that many country-year-category combinations do not have a recorded value.
+
+8. **Why might missing observations occur in a large international dataset?**  
+   Countries may differ in testing, reporting systems, data collection, and the years for which information is available. Missing data can also result from incomplete records or changes in reporting practices. A missing value does not necessarily mean zero cases.
+
+## 4.3 Tidying the Dataset
+
+### 4.3.1 Convert the dataset to long format
+
+```{r who-pivot-long}
+who_tidy <- who %>%
+  pivot_longer(
+    cols = -c(country, iso2, iso3, year),
+    names_to = "profile",
+    values_to = "cases"
+  )
+
+glimpse(who_tidy)
+head(who_tidy)
+```
+
+### 4.3.2 Separate information contained in `profile`
+
+```{r who-separate-profile}
+who_tidy <- who_tidy %>%
+  mutate(
+    profile = gsub("newrel_", "new_rel_", profile)
+  ) %>%
+  separate(
+    profile,
+    into = c("new", "type", "sex_age"),
+    sep = "_",
+    fill = "right",
+    extra = "merge"
+  ) %>%
+  separate(
+    sex_age,
+    into = c("sex", "age"),
+    sep = "(?<=m|f)",
+    fill = "right",
+    extra = "merge"
+  )
+
+glimpse(who_tidy)
+head(who_tidy)
+```
+
+## 4.4 Defining the Data for Analysis
+
+```{r who-filter-tb}
+tb_data <- who_tidy %>%
+  filter(
+    type == "sp",
+    !is.na(cases)
+  )
+
+glimpse(tb_data)
+```
+
+### Guide Question 9
+
+9. **What does `type == "sp"` represent in the dataset?**  
+   It selects the smear-positive pulmonary TB category. In this exercise, it is used to focus on recorded new smear-positive pulmonary TB cases.
+
+## 4.5 Exploring Variation and Distributions
+
+### 4.5.1 TB cases across years
+
+```{r tb-by-year}
+tb_by_year <- tb_data %>%
+  group_by(year) %>%
+  summarise(
+    total_cases = sum(cases, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+tb_by_year
+
+ggplot(tb_by_year, aes(x = year, y = total_cases)) +
+  geom_line() +
+  labs(
+    title = "Recorded TB Cases Over Time",
+    x = "Year",
+    y = "Total Recorded Cases"
+  ) +
+  theme_classic()
+```
+
+10. **What general pattern do you observe over time?**  
+    The total recorded TB cases vary over time. The recorded totals are generally higher in later years than in many earlier years. However, this pattern may reflect changes in reporting coverage as well as changes in the number of cases.
+
+11. **Are there periods when the number of recorded cases changes substantially?**  
+    Yes. The line plot shows periods of noticeable increases and decreases in recorded cases. The exact years can be identified by examining the plot and the tb_by_year table.
+
+12. **What are some possible explanations for changes in recorded cases?**  
+    Changes may be related to disease occurrence, population size, access to healthcare, testing, and reporting practices. The visualization alone cannot determine which factor caused the changes.
+
+### 4.5.2 Comparing categories: cases by sex
+
+```{r tb-by-sex}
+tb_by_sex <- tb_data %>%
+  group_by(sex) %>%
+  summarise(
+    total_cases = sum(cases, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+tb_by_sex
+
+ggplot(tb_by_sex, aes(x = sex, y = total_cases, fill = sex)) +
+  geom_col() +
+  labs(
+    title = "Recorded TB Cases by Sex",
+    x = "Sex",
+    y = "Total Recorded Cases",
+    fill = "Sex"
+  ) +
+  theme_classic()
+```
+
+13. **Which sex has the greater number of recorded cases in this dataset?**  
+    Males have the greater total number of recorded cases in this dataset.
+
+14. **What does this comparison tell you?**  
+    It shows that the sum of recorded cases for males is higher than the sum for females in the selected data.
+
+15. **What does it not tell you about the risk of TB between males and females?**  
+    It does not establish that an individual male has a higher risk of TB. Risk comparisons would require appropriate population denominators and consideration of other factors, such as age, exposure, testing, and reporting.
+
+### 4.5.3 Variation across age groups
+
+```{r tb-by-age}
+tb_by_age <- tb_data %>%
+  group_by(age) %>%
+  summarise(
+    total_cases = sum(cases, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+tb_by_age
+
+ggplot(tb_by_age, aes(x = age, y = total_cases)) +
+  geom_col() +
+  labs(
+    title = "Recorded TB Cases by Age Group",
+    x = "Age Group",
+    y = "Total Recorded Cases"
+  ) +
+  theme_classic()
+```
+
+16. **Which age group has the largest number of recorded cases?**  
+    The 25–34 age group has the largest total number of recorded cases in the supplied results.
+
+17. **Which age group has the smallest number?**  
+    The 0–14 age group has the smallest total number of recorded cases in the supplied results.
+
+18. **What pattern do you observe across age groups?**  
+    Recorded cases are highest among adults aged 25–34, followed by those aged 35–44. The totals generally become lower in the older age groups, while the 0–14 age group has the lowest total. These are recorded case counts and do not directly represent the risk of TB in each age group.
+
+## 4.6 Bivariate Analysis: Cases by Year and Sex
+
+```{r tb-year-sex}
+tb_year_sex <- tb_data %>%
+  group_by(year, sex) %>%
+  summarise(
+    total_cases = sum(cases, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+glimpse(tb_year_sex)
+
+ggplot(
+  tb_year_sex,
+  aes(x = year, y = total_cases, color = sex)
+) +
+  geom_line() +
+  labs(
+    title = "Recorded TB Cases Over Time by Sex",
+    x = "Year",
+    y = "Total Recorded Cases",
+    color = "Sex"
+  ) +
+  theme_classic()
+```
+
+19. **How do the patterns for males and females change over time?**  
+    Both groups vary over time, while the male totals are generally higher than the female totals.
+
+20. **Do the two groups show similar or different trends?**  
+    They share some broad changes over time, but the total recorded cases differ between the groups. Compare the lines to describe any years when their directions differ.
+
+21. **Are there periods where the difference between the groups appears larger?**  
+    The difference appears larger in years when the distance between the two lines is greatest. The plot helps identify those periods, but it does not explain why the difference occurs.
+
+## 4.7 Multivariable Exploration: Year, Age, and Sex
+
+```{r tb-year-age-sex}
+tb_year_age_sex <- tb_data %>%
+  group_by(year, age, sex) %>%
+  summarise(
+    total_cases = sum(cases, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+glimpse(tb_year_age_sex)
+
+ggplot(
+  tb_year_age_sex,
+  aes(x = year, y = total_cases, color = sex)
+) +
+  geom_point() +
+  facet_wrap(~ age) +
+  labs(
+    title = "Recorded TB Cases Over Time by Age Group and Sex",
+    x = "Year",
+    y = "Total Recorded Cases",
+    color = "Sex"
+  ) +
+  theme_classic()
+```
+
+22. **Do the patterns across age groups appear similar?**  
+    No. The panels differ in the size and spread of recorded case totals across age groups.
+
+23. **Which age groups show the largest number of recorded cases?**  
+    In the supplied example results, the 25–34 and 35–44 age groups have high recorded totals. Check the faceted plot and `tb_by_age` table for the results from your run.
+
+24. **How does the pattern differ between males and females?**  
+    Male totals are generally higher than female totals across many age groups, although the size of the difference can vary.
+
+25. **Are there age groups where the two sexes appear more similar or different?**  
+    Compare the distance between the male and female points within each panel. Smaller distances indicate more similar recorded totals, while larger distances indicate a greater difference. The plot shows the difference but does not identify its cause.
+
+## 4.8 Investigating Unusual Observations
+
+```{r tb-boxplot}
+ggplot(tb_data, aes(x = "", y = cases)) +
+  geom_boxplot() +
+  labs(
+    title = "Distribution of Recorded TB Cases",
+    x = NULL,
+    y = "Number of Recorded Cases"
+  ) +
+  theme_classic()
+```
+
+26. **Does the boxplot show observations that may be unusually high or low?**  
+    Yes. The boxplot shows unusually high values outside the main distribution. The values near the lower end should also be considered in the context of the data.
+
+27. **What factors might explain an unusual observation?**  
+    It could reflect a real difference in population size or disease burden, a local outbreak, differences in testing and reporting, or a data-entry or measurement issue.
+
+28. **What additional information would you check?**  
+    I would check the country, year, age group, sex, original source, population size, and reporting notes. I would also compare the value with nearby years and other records from the same country.
+
+29. **Would you automatically remove these observations? Why or why not?**  
+    No. An unusual value is not automatically an error. I would investigate it first and only correct or exclude it if there is evidence that it is invalid and a clear reason for doing so.
+
+## 4.8 Practice Exercise: EDA Using `airquality`
+
+### Practice 1. Missing values 
+
+```{r airquality-missing}
+colSums(is.na(airquality))
+```
+
+- **Which variables contain missing values?** `Ozone` and `Solar.R` contain missing values in the built-in dataset.
+- **Why should missing values be considered?** Some plots omit records with missing values, so the displayed points or summaries may represent fewer observations than the full dataset. Missing values should not be treated as zero.
+
+### Practice 2. Histogram and boxplot 
+
+- **What does the histogram tell you about wind speed?** Wind speeds cover a range of values, with many observations in the middle of the range and fewer at the extremes.
+- **How does temperature vary among months?** Temperatures tend to be lower in May and June and higher in July and August, with variation within each month.
+- **Which visualization is more useful for comparing temperature among months?** The boxplot is more useful because it places each month side by side and shows the median, spread, and potential outliers for each group.
+
+### Practice 3. Scatter plots and trend line 
+
+- **What relationship do you observe between wind speed and ozone concentration?** The scatter plot generally suggests that higher wind speeds are associated with lower ozone concentrations, although the points are spread out.
+- **What relationship do you observe between wind speed and temperature?** The scatter plot with the linear trend line suggests a negative relationship, with temperature generally tending to decrease as wind speed increases.
+- **Which relationship appears clearer or more consistent based on the visualizations?** Compare the spread of points and the direction of the trend line in both plots. The trend line makes the overall direction easier to see, but neither plot alone proves causation.
+
+### Practice 4. Faceted Wind and Ozone plot 
+
+- **Is the relationship similar across all months?** Not exactly. The point patterns and ranges differ by month.
+- **Are some months more widely spread or different?** Some months show a wider range of ozone concentrations and more scattered points than others. Use the faceted plot to identify the specific months in your output.
+- **Why is faceting useful?** It separates the observations by month, making it easier to compare monthly patterns without all points overlapping in a single panel.
+
+### Practice 5. Unusual observations 
+
+- **One unusual observation** A point with a particularly high ozone concentration compared with most other observations is a reasonable candidate to identify in the scatter plot.
+- **Which visualization helped identify it?** The Wind vs Ozone scatter plot, including its faceted version, can reveal points that stand apart from the rest.
+- **One possible explanation** It could reflect unusual atmospheric conditions or a genuine high-ozone day; it could also result from a measurement or recording issue.
+- **Would you automatically remove it?** No. I would first check the date, measurement, and source information because unusual observations may be scientifically meaningful.
+
+### Practice 6. Future research questions 
+
+1. How is wind speed associated with ozone concentration across different months?
+2. Does the relationship between wind speed and temperature change from May through September?
+
+## Conclusion
+
+In these laboratory exercises, I practiced creating and customizing visualizations using `ggplot2` and exploring biological data using the `tidyverse`. I used plots and summary statistics to examine distributions, compare groups, explore relationships, and identify unusual observations. I also learned to consider missing data and avoid drawing conclusions that the available data cannot support.
