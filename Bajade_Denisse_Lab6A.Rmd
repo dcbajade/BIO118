@@ -1,0 +1,839 @@
+---
+title: "Bajade_Denisse_Lab6A"
+author: "Denisse Gabrielle C. Bajade"
+date: "2026-11-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+# Student Information
+
+**Name:** Denisse Gabrielle C. Bajade  
+**Course:** BS Biology  
+**Laboratory Exercise:** 6A
+
+**GitHub:** <https://github.com/dcbajade/BIO118>
+
+# Guide Questions and Answers
+
+## 6A.1 Comparing One Sample to a Reference Value
+
+### 6A.1.1 Load and inspect the data
+
+```{r}
+library(tidyverse)
+library(car)
+
+data("trees")
+
+head(trees)
+str(trees)
+summary(trees$Height)
+sum(is.na(trees$Height))
+```
+
+Does the variable contain numerical observations, and are there missing or unusual values?
+
+- Height is a numerical variable with 31 observations. There are no missing values, and the heights range from 63 to 87 feet with no unusual observations.
+
+### 6A.1.2 Explore the data
+
+```{r}
+ggplot(trees, aes(x = Height)) +
+  geom_histogram(bins = 10) +
+  labs(
+    title = "Distribution of Black Cherry Tree Heights",
+    x = "Height (feet)",
+    y = "Number of Trees"
+  ) +
+  theme_minimal()
+
+ggplot(trees, aes(x = "", y = Height)) +
+  geom_boxplot() +
+  labs(
+    title = "Boxplot of Black Cherry Tree Heights",
+    x = NULL,
+    y = "Height (feet)"
+  ) +
+  theme_minimal()
+```
+
+What do the histogram and boxplot show about the distribution of tree heights?
+
+- The heights are roughly symmetrical and centered at about 76 feet. The boxplot shows no outliers.
+
+### 6A.1.3 Formulate the hypotheses
+
+- Null hypothesis (H0): The population mean tree height is 75 feet.
+- Alternative hypothesis (HA): The population mean tree height differs from 75 feet.
+- Significance level: α = 0.05.
+
+### 6A.1.4 Assess the assumptions and choose an appropriate test
+
+```{r}
+ggplot(trees, aes(sample = Height)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(
+    title = "Normal Q-Q Plot of Tree Heights",
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal()
+
+shapiro.test(trees$Height)
+```
+
+Are the assumptions of the one-sample t-test met?
+
+- Numerical response: Met. Height is a numerical variable.
+- Independence: Met. Each observation is a different tree, and no relationship among the trees is described.
+- Normality: Met. The points in the Q-Q plot lie close to the reference line, and the Shapiro-Wilk test gave W = 0.96545, p = 0.4034. The one-sample t-test is appropriate.
+
+### 6A.1.5 Perform the one-sample t-test
+
+```{r}
+t.test(trees$Height, mu = 75)
+```
+
+### 6A.1.6 Interpret the results
+
+What is your statistical conclusion?
+
+- The mean height of the sampled trees was 76 feet (t = 0.874, df = 30, p = 0.389; 95% CI: 73.66 to 78.34 feet). We fail to reject the null hypothesis. There is insufficient evidence that the population mean height of black cherry trees differs from 75 feet.
+
+### 6A.1.7 One-Sample Wilcoxon Signed-Rank Test
+
+```{r}
+tree_sample <- data.frame(
+  Tree_ID = 1:20,
+  Height = c(
+    35, 36, 37, 38, 39,
+    40, 41, 42, 43, 44,
+    52, 53, 54, 55, 56,
+    57, 58, 59, 60, 61
+  )
+)
+
+tree_sample
+```
+
+Formulate the hypotheses.
+
+- Null hypothesis (H0): The distribution's location parameter is 45 feet.
+- Alternative hypothesis (HA): The distribution's location parameter differs from 45 feet.
+- Significance level: α = 0.05.
+
+```{r}
+ggplot(tree_sample, aes(x = Height)) +
+  geom_histogram(bins = 10, color = "white") +
+  labs(
+    title = "Distribution of Simulated Tree Heights",
+    x = "Tree Height (feet)",
+    y = "Number of Trees"
+  ) +
+  theme_minimal()
+
+ggplot(tree_sample, aes(x = "", y = Height)) +
+  geom_boxplot() +
+  labs(
+    title = "Simulated Tree Heights",
+    x = NULL,
+    y = "Tree Height (feet)"
+  ) +
+  theme_minimal()
+```
+
+What do the plots show?
+
+- The histogram is bimodal, with one group of trees at about 35 to 44 feet and another at about 52 to 61 feet. The boxplot shows no outliers.
+
+```{r}
+ggplot(tree_sample, aes(sample = Height)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(
+    title = "Normal Q-Q Plot of Simulated Tree Heights",
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal()
+
+shapiro.test(tree_sample$Height)
+```
+
+Is the normality assumption met?
+
+- No. The Q-Q plot departs from the reference line, and the Shapiro-Wilk test gave W = 0.88769, p = 0.02439, which is evidence against normality. The one-sample Wilcoxon signed-rank test was conducted as the nonparametric alternative.
+
+```{r}
+wilcox.test(
+  tree_sample$Height,
+  mu = 45,
+  alternative = "two.sided",
+  conf.int = TRUE
+)
+```
+
+What is your statistical conclusion?
+
+- The Wilcoxon signed-rank test gave V = 147, p = 0.1209. The estimated pseudomedian was 48 feet (95.3% CI: 43.5 to 53.0 feet). We fail to reject the null hypothesis. There is insufficient evidence that the location of the tree-height distribution differs from 45 feet. However, the bimodal distribution should be considered when interpreting the pseudomedian.
+
+## 6A.2 Comparing Paired Samples
+
+### 6A.2.2 Load and inspect the data
+
+```{r}
+data("sleep")
+
+head(sleep)
+str(sleep)
+summary(sleep)
+table(sleep$group)
+```
+
+What does the dataset contain, and why is a paired analysis used?
+
+- The dataset has 20 observations: the increase in sleep duration (extra, in hours) of 10 subjects under each of two drugs (group 1 and group 2). Because the same 10 subjects received both drugs, the two measurements are paired.
+
+### 6A.2.3 Formulate the hypotheses
+
+Let d be the difference in sleep increase for each subject (Drug 1 minus Drug 2).
+
+- Null hypothesis (H0): The population mean difference in sleep increase is zero.
+- Alternative hypothesis (HA): The population mean difference in sleep increase is not zero.
+- Significance level: α = 0.05.
+
+### 6A.2.4 Prepare the paired data
+
+```{r}
+sleep_wide <- sleep %>%
+  pivot_wider(
+    names_from = group,
+    values_from = extra,
+    names_prefix = "drug"
+  )
+
+head(sleep_wide)
+
+sleep_wide <- sleep_wide %>%
+  mutate(difference = drug1 - drug2)
+
+sleep_wide
+colSums(is.na(sleep_wide))
+```
+
+Does each subject have both measurements, and was the difference calculated correctly?
+
+- Yes. The data were reshaped to 10 rows, one per subject, with the columns drug1 and drug2. There are no missing values, so every subject has both measurements. The difference was calculated as drug1 minus drug2, so a negative difference means the sleep increase was greater under Drug 2.
+
+### 6A.2.5 Explore the differences
+
+```{r}
+sleep_long <- sleep_wide %>%
+  pivot_longer(
+    cols = c(drug1, drug2),
+    names_to = "Drug",
+    values_to = "Sleep_Increase"
+  )
+
+ggplot(sleep_long, aes(
+  x = Drug,
+  y = Sleep_Increase,
+  group = ID
+)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Paired Sleep Increase Under Two Drugs",
+    x = "Drug",
+    y = "Increase in Sleep Duration (hours)"
+  ) +
+  theme_minimal()
+
+ggplot(sleep_wide, aes(x = difference)) +
+  geom_histogram(bins = 6, color = "white") +
+  labs(
+    title = "Distribution of Paired Differences in Sleep Increase",
+    x = "Difference (Drug 1 - Drug 2, hours)",
+    y = "Number of Subjects"
+  ) +
+  theme_minimal()
+
+ggplot(sleep_wide, aes(sample = difference)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(
+    title = "Normal Q-Q Plot of Paired Differences",
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal()
+
+shapiro.test(sleep_wide$difference)
+```
+
+What do the plots and the normality test show?
+
+- Nine of the ten subjects had a higher sleep increase under Drug 2 (negative differences), and one subject had no difference. The histogram and Q-Q plot show departures from normality, including one very low difference of -4.6 hours. The Shapiro-Wilk test gave W = 0.82987, p = 0.03334, which is evidence against normality of the paired differences. The Wilcoxon signed-rank test was used as the primary nonparametric comparison, while the paired t-test was also conducted for comparison.
+
+### 6A.2.6 Perform the paired t-test
+
+```{r}
+t.test(
+  sleep_wide$drug1,
+  sleep_wide$drug2,
+  paired = TRUE
+)
+```
+
+What is the result of the paired t-test?
+
+- The paired t-test gave t = -4.062, df = 9, p = 0.002833. The mean difference (Drug 1 minus Drug 2) was -1.58 hours (95% CI: -2.46 to -0.70 hours).
+
+### 6A.2.7 Perform the Wilcoxon signed-rank test
+
+```{r}
+wilcox.test(
+  sleep_wide$drug1,
+  sleep_wide$drug2,
+  paired = TRUE,
+  alternative = "two.sided"
+)
+```
+
+What is the result of the Wilcoxon signed-rank test?
+
+- The Wilcoxon signed-rank test gave V = 0, p = 0.003906.
+
+### 6A.2.8 Report the findings
+
+What is your statistical conclusion?
+
+- The paired differences were not normally distributed, so the Wilcoxon signed-rank test was used as the primary nonparametric comparison. It showed a statistically significant difference in sleep increase between Drug 1 and Drug 2 (V = 0, p = 0.0039). The paired t-test gave a consistent result (t = -4.06, df = 9, p = 0.0028). We reject the null hypothesis. Drug 2 produced a greater increase in sleep duration than Drug 1. The average difference was 1.58 hours in favor of Drug 2.
+
+## 6A.3 Comparing Means of Two Independent Groups
+
+### 6A.3.2 Load and inspect the data
+
+```{r}
+data("iris")
+
+head(iris)
+str(iris)
+```
+
+### 6A.3.3 Prepare the data
+
+```{r}
+data_subset <- iris %>%
+  filter(Species %in% c("setosa", "versicolor"))
+
+head(data_subset)
+table(data_subset$Species)
+
+data_subset <- droplevels(data_subset)
+
+str(data_subset)
+summary(data_subset)
+table(data_subset$Species)
+```
+
+How many observations are in each group, and are the groups independent?
+
+- There are 50 flowers each for setosa and versicolor (100 in total). Each observation is a different flower, so the two species form independent groups.
+
+### 6A.3.4 Formulate the hypotheses
+
+- Null hypothesis (H0): The population mean sepal lengths are equal (μ setosa = μ versicolor).
+- Alternative hypothesis (HA): The population mean sepal lengths differ (μ setosa ≠ μ versicolor).
+- Significance level: α = 0.05.
+
+### 6A.3.5 Explore the data
+
+```{r}
+ggplot(data_subset, aes(x = Sepal.Length)) +
+  geom_histogram(bins = 10, color = "white") +
+  facet_wrap(~ Species) +
+  labs(
+    title = "Distribution of Sepal Length by Species",
+    x = "Sepal Length (cm)",
+    y = "Number of Flowers"
+  ) +
+  theme_minimal()
+
+ggplot(data_subset, aes(
+  x = Species,
+  y = Sepal.Length,
+  fill = Species
+)) +
+  geom_boxplot() +
+  labs(
+    title = "Comparison of Sepal Length Between Species",
+    x = "Species",
+    y = "Sepal Length (cm)"
+  ) +
+  theme_minimal() +
+  guides(fill = "none")
+
+data_subset %>%
+  group_by(Species) %>%
+  summarise(
+    n = n(),
+    mean_length = mean(Sepal.Length),
+    sd_length = sd(Sepal.Length)
+  )
+```
+
+Do the groups differ in their central values, variability, or shape?
+
+- Versicolor has the higher central value (mean = 5.94 cm) compared to setosa (mean = 5.01 cm). Versicolor is also more variable (SD = 0.516 cm vs 0.352 cm). Both distributions are roughly symmetrical.
+
+### 6A.3.6 Assess the assumptions
+
+```{r}
+ggplot(data_subset, aes(sample = Sepal.Length)) +
+  stat_qq() +
+  stat_qq_line() +
+  facet_wrap(~ Species) +
+  labs(
+    title = "Normal Q-Q Plots of Sepal Length by Species",
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal()
+
+by(
+  data_subset$Sepal.Length,
+  data_subset$Species,
+  shapiro.test
+)
+
+leveneTest(
+  Sepal.Length ~ Species,
+  data = data_subset
+)
+```
+
+Are the assumptions of the two-sample t-test met?
+
+- Independence: Met. Each flower is a separate observation.
+- Normality: Met. The points in both Q-Q plots follow the reference line, and the Shapiro-Wilk tests gave W = 0.9777, p = 0.4595 for setosa and W = 0.97784, p = 0.4647 for versicolor.
+- Equal variances: Not met. Levene's test gave F = 8.1727, p = 0.005196, providing evidence of unequal variances. Welch's two-sample t-test does not assume equal variances, so it is the appropriate test.
+
+### 6A.3.7 Perform Welch's two-sample t-test
+
+```{r}
+t.test(
+  Sepal.Length ~ Species,
+  data = data_subset
+)
+```
+
+### 6A.3.8 Demonstrate the Mann-Whitney U test
+
+```{r}
+wilcox.test(
+  Sepal.Length ~ Species,
+  data = data_subset,
+  alternative = "two.sided"
+)
+```
+
+### 6A.3.9 Report the findings
+
+What is your statistical conclusion?
+
+- Welch's two-sample t-test showed a statistically significant difference in mean sepal length between Iris setosa and Iris versicolor (t = -10.521, df = 86.538, p < 0.001). The mean sepal length was 5.006 cm for setosa and 5.936 cm for versicolor, a difference of -0.930 cm (95% CI: -1.106 to -0.754 cm). We reject the null hypothesis. Iris versicolor has the greater mean sepal length. The Wilcoxon rank-sum test gave the same conclusion (W = 168.5, p < 0.001).
+
+# 6A.4 Practice Exercise
+
+## 6A.4.1 One-Sample t-test
+
+### 1. Inspect and prepare the data
+
+```{r}
+data("airquality")
+
+head(airquality)
+str(airquality)
+summary(airquality$Ozone)
+
+sum(is.na(airquality$Ozone))
+sum(!is.na(airquality$Ozone))
+
+ozone_data <- airquality %>%
+  filter(!is.na(Ozone))
+
+nrow(ozone_data)
+```
+
+What are the summary statistics for Ozone?
+
+- Ozone ranges from 1 to 168 ppb, with a 1st quartile of 18, a median of 31.5, a mean of 42.13, and a 3rd quartile of 63.25 ppb. The mean is higher than the median.
+
+How many ozone measurements are missing, and how many are available?
+
+- Ozone has 37 missing values. There are 116 available ozone measurements out of 153 days.
+
+How many observations were retained?
+
+- The dataset `ozone_data` retains 116 observations.
+
+### 2. Explore the distribution
+
+```{r}
+ggplot(ozone_data, aes(x = Ozone)) +
+  geom_histogram(bins = 15, color = "white") +
+  labs(
+    title = "Distribution of Daily Ozone Concentrations",
+    x = "Ozone (ppb)",
+    y = "Number of Days"
+  ) +
+  theme_minimal()
+
+ggplot(ozone_data, aes(x = "", y = Ozone)) +
+  geom_boxplot() +
+  labs(
+    title = "Boxplot of Ozone Levels",
+    x = NULL,
+    y = "Ozone (ppb)"
+  ) +
+  theme_minimal()
+```
+
+Describe the distribution, possible outliers, and skewness.
+
+- The distribution is strongly right-skewed. Most days have low to moderate ozone, with a long tail toward high values (up to 168 ppb). The boxplot shows potential outliers at the high end.
+
+### 3. State the hypotheses
+
+- Null hypothesis (H0): The population mean daily ozone concentration is 30 ppb.
+- Alternative hypothesis (HA): The population mean daily ozone concentration differs from 30 ppb.
+- Significance level: α = 0.05.
+
+### 4. Assess the assumptions
+
+```{r}
+ggplot(ozone_data, aes(sample = Ozone)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(
+    title = "Normal Q-Q Plot of Ozone",
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal()
+
+shapiro.test(ozone_data$Ozone)
+```
+
+Which test is appropriate, and what is the evidence?
+
+- The distribution is strongly right-skewed, and the Q-Q plot departs from the reference line in the upper tail. The Shapiro-Wilk test gave W = 0.87867, p = 2.79 × 10⁻⁸, indicating evidence against normality. The Wilcoxon signed-rank test was also conducted as the nonparametric comparison, with its result interpreted in terms of the pseudomedian.
+
+### 5. Conduct and report the analysis
+
+```{r}
+t.test(ozone_data$Ozone, mu = 30)
+
+wilcox.test(
+  ozone_data$Ozone,
+  mu = 30,
+  alternative = "two.sided",
+  conf.int = TRUE
+)
+```
+
+What are the test statistic, p-value, estimate, and confidence interval?
+
+- The Wilcoxon signed-rank test gave V = 4108, p = 0.01892. The estimated pseudomedian was 38.50 ppb (95% CI: 31.00 to 45.50 ppb).
+- For comparison, the one-sample t-test gave t = 3.9601, df = 115, p = 0.0001302, with a mean of 42.13 ppb (95% CI: 36.06 to 48.20 ppb). The Wilcoxon test was also reported because the distribution showed strong right-skewness and evidence against normality.
+
+### 6. Write your biological/environmental interpretation
+
+What is your conclusion?
+
+- The one-sample Wilcoxon signed-rank test showed that the location of the daily ozone concentrations in New York from May to September 1973 differed significantly from the 30 ppb reference value (V = 4108, p = 0.01892). We reject the null hypothesis. The estimated pseudomedian was 38.50 ppb, which is above the 30 ppb reference value. The sample mean was 42.13 ppb, indicating that the observed ozone concentrations were higher on average than the reference value. The distribution was right-skewed, with some days reaching up to 168 ppb.
+
+## 6A.4.2 Paired t-test
+
+### 1. Load and inspect the data
+
+```{r}
+data("ChickWeight")
+
+head(ChickWeight)
+str(ChickWeight)
+summary(ChickWeight)
+```
+
+What does the dataset contain?
+
+- The dataset contains 578 repeated body weight measurements (weight, in grams) of 50 chicks on 4 diets, recorded at different time points (Time, in days).
+
+### 2. Prepare complete pairs
+
+```{r}
+chick <- as.data.frame(ChickWeight)
+
+chick_wide <- chick %>%
+  filter(Time %in% c(10, 21)) %>%
+  select(Chick, Time, weight) %>%
+  pivot_wider(
+    names_from = Time,
+    values_from = weight,
+    names_prefix = "Day"
+  )
+
+head(chick_wide)
+nrow(chick_wide)
+
+colSums(is.na(chick_wide))
+chick_wide %>%
+  filter(is.na(Day10) | is.na(Day21))
+
+chick_wide <- chick_wide %>%
+  filter(!is.na(Day10) & !is.na(Day21)) %>%
+  mutate(difference = Day21 - Day10)
+
+nrow(chick_wide)
+head(chick_wide)
+str(chick_wide)
+summary(chick_wide$difference)
+
+chick_wide %>%
+  summarise(
+    n = n(),
+    mean_day10 = mean(Day10),
+    sd_day10 = sd(Day10),
+    mean_day21 = mean(Day21),
+    sd_day21 = sd(Day21),
+    mean_difference = mean(difference),
+    sd_difference = sd(difference)
+  )
+```
+
+Which chicks do not have complete pairs, and how many complete pairs remain?
+
+- The dataset contains 50 chicks. The incomplete-pair output identifies the chicks without measurements at both Day 10 and Day 21. After removing incomplete pairs, 45 complete pairs remain.
+
+**Note:** Verify the incomplete-pair output before submission and list the exact chick IDs and missing measurements. The current list of four chicks does not account for the reported 45 complete pairs.
+
+What do the differences look like?
+
+- The differences (Day 21 minus Day 10) range from 2 to 215 g, with a median of 109 g and a mean of 108.6 g. The mean weight was about 110 g at Day 10 (SD = 22.5 g) and about 219 g at Day 21 (SD = 71.5 g).
+
+### 3. Explore the data
+
+```{r}
+chick_long <- chick_wide %>%
+  pivot_longer(
+    cols = c(Day10, Day21),
+    names_to = "Day",
+    values_to = "Weight"
+  )
+
+ggplot(chick_long, aes(
+  x = Day,
+  y = Weight,
+  group = Chick
+)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Chick Weights on Day 10 and Day 21",
+    x = "Day",
+    y = "Weight (grams)"
+  ) +
+  theme_minimal()
+
+ggplot(chick_wide, aes(x = difference)) +
+  geom_histogram(bins = 15, color = "white") +
+  labs(
+    title = "Distribution of Weight Differences",
+    x = "Weight Difference (Day 21 - Day 10)",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+```
+
+Describe the direction and spread of the differences and any unusual observations.
+
+- Every chick gained weight from Day 10 to Day 21, since the smallest difference is 2 g and all lines slope upward. The gain varies widely among chicks, from 2 g to 215 g, and the weights are much more spread out at Day 21 (SD = 71.5 g) than at Day 10 (SD = 22.5 g). One chick gained only 2 g, and the chick with the largest gain (215 g) lies far above the middle of the differences.
+
+### 4. Formulate the hypothesis
+
+Let d be the weight at Day 21 minus the weight at Day 10 for each chick.
+
+- Null hypothesis (H0): The population mean difference in body weight between Day 21 and Day 10 is zero.
+- Alternative hypothesis (HA): The population mean difference in body weight is not zero.
+- Significance level: α = 0.05.
+
+### 5. Assess the assumptions
+
+```{r}
+ggplot(chick_wide, aes(sample = difference)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(
+    title = "Normal Q-Q Plot of Paired Weight Differences",
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal()
+
+shapiro.test(chick_wide$difference)
+```
+
+Is a paired t-test or the Wilcoxon signed-rank test reasonable?
+
+- The Shapiro-Wilk test on the paired differences gave W = 0.96839, p = 0.2529, showing no significant evidence against normality. The paired t-test is reasonable.
+
+### 6. Conduct the appropriate test
+
+```{r}
+t.test(
+  chick_wide$Day21,
+  chick_wide$Day10,
+  paired = TRUE
+)
+
+wilcox.test(
+  chick_wide$Day21,
+  chick_wide$Day10,
+  paired = TRUE,
+  conf.int = TRUE
+)
+```
+
+### 7. Interpret and report the findings
+
+What is your statistical conclusion?
+
+- The paired t-test showed that mean body weight differed significantly between Day 10 and Day 21 (t = 12.509, df = 44, p < 0.001). The mean difference (Day 21 minus Day 10) was 108.6 g (95% CI: 91.10 to 126.10 g). We reject the null hypothesis. Chicks were heavier at Day 21 than at Day 10 by about 109 g on average, which reflects growth over this period. The Wilcoxon signed-rank test gave the same conclusion (V = 1035, p < 0.001; pseudomedian = 108 g).
+
+## 6A.4.3 Independent t-test
+
+### 1. Load and inspect the data
+
+```{r}
+data("PlantGrowth")
+
+head(PlantGrowth)
+str(PlantGrowth)
+summary(PlantGrowth)
+```
+
+What does the dataset contain?
+
+- The dataset has 30 plants, with the dried plant weight (weight, numerical) and the treatment group (group: ctrl, trt1, trt2), with 10 plants in each group.
+
+### 2. Select the two groups
+
+```{r}
+plant_subset <- PlantGrowth %>%
+  filter(group %in% c("ctrl", "trt1"))
+
+plant_subset <- droplevels(plant_subset)
+
+head(plant_subset)
+str(plant_subset)
+summary(plant_subset)
+table(plant_subset$group)
+```
+
+How many observations are in each group?
+
+- The control group and treatment 1 each have 10 plants (20 in total).
+
+### 3. Formulate the hypothesis
+
+- Null hypothesis (H0): The population mean plant weights of the control group and treatment 1 are equal (μ ctrl = μ trt1).
+- Alternative hypothesis (HA): The population mean plant weights differ (μ ctrl ≠ μ trt1).
+- Significance level: α = 0.05.
+
+### 4. Explore the data
+
+```{r}
+plant_subset %>%
+  group_by(group) %>%
+  summarise(
+    n = n(),
+    mean_weight = mean(weight),
+    sd_weight = sd(weight)
+  )
+
+ggplot(plant_subset, aes(
+  x = group,
+  y = weight,
+  fill = group
+)) +
+  geom_boxplot() +
+  labs(
+    title = "Plant Dry Weight: Control vs Treatment 1",
+    x = "Group",
+    y = "Dry Weight"
+  ) +
+  theme_minimal() +
+  guides(fill = "none")
+```
+
+What are the sample size, mean, and standard deviation of each group, and do any observations look unusual?
+
+- Each group has n = 10. The control group has a mean of 5.032 (SD = 0.583), and treatment 1 has a mean of 4.661 (SD = 0.794). The control group has the slightly higher mean, and the two groups overlap substantially. No unusual observations are visible in the boxplot.
+
+### 5. Assess the assumptions
+
+```{r}
+ggplot(plant_subset, aes(sample = weight)) +
+  stat_qq() +
+  stat_qq_line() +
+  facet_wrap(~ group) +
+  labs(
+    title = "Normal Q-Q Plots of Plant Weight",
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal()
+
+by(
+  plant_subset$weight,
+  plant_subset$group,
+  shapiro.test
+)
+
+leveneTest(
+  weight ~ group,
+  data = plant_subset
+)
+```
+
+Is a two-sample t-test reasonable?
+
+- Independence: Met. Each plant is a separate experimental unit.
+- Normality: Met. The points in both Q-Q plots follow the reference line, and the Shapiro-Wilk tests gave W = 0.95668, p = 0.7475 for the control group and W = 0.93041, p = 0.4519 for treatment 1.
+- Equal variances: Met. Levene's test gave F = 0.6203, p = 0.4412, providing no significant evidence of unequal variances between the groups. The equal-variance assumption is therefore reasonable. Welch's two-sample t-test, which does not require equal variances, is used as R's default.
+
+### 6. Conduct the appropriate test
+
+```{r}
+t.test(
+  weight ~ group,
+  data = plant_subset
+)
+
+wilcox.test(
+  weight ~ group,
+  data = plant_subset
+)
+```
+
+### 7. Interpret and report the findings
+
+What is your statistical conclusion?
+
+- Welch's two-sample t-test showed no statistically significant difference in mean plant weight between the control group and treatment 1 (t = 1.191, df = 16.524, p = 0.2504). The mean weight was 5.032 for the control group and 4.661 for treatment 1, a difference of 0.371 (95% CI: -0.288 to 1.030). We fail to reject the null hypothesis. There is insufficient evidence that treatment 1 changed the mean dry weight of the plants compared with the control group. The Wilcoxon rank-sum test gave the same conclusion (W = 67.5, p = 0.1968).

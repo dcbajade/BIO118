@@ -1,0 +1,764 @@
+---
+title: "Bajade_Denisse_Lab6B"
+author: "Denisse Gabrielle C. Bajade"
+date: "2026-11-14"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(car)
+```
+
+# 6B.1 Comparing Means of More than Two Groups
+
+## 6B.1.1 Load and inspect the data
+
+The `iris` dataset contains 150 observations and five variables. It includes measurements of sepal length, sepal width, petal length, and petal width, as well as the species classification. The dataset contains three species: setosa, versicolor, and virginica, with 50 observations for each species.
+
+```{r}
+data("iris")
+
+head(iris)
+str(iris)
+summary(iris)
+table(iris$Species)
+```
+
+## 6B.1.2 Explore the data
+
+### Distribution of sepal length
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length)) +
+  geom_histogram(bins = 10, color = "white") +
+  facet_wrap(~ Species) +
+  labs(
+    title = "Distribution of Sepal Length by Species",
+    x = "Sepal Length (cm)",
+    y = "Number of Flowers"
+  ) +
+  theme_minimal()
+```
+
+### Boxplot of sepal length
+
+```{r}
+ggplot(iris, aes(x = Species, y = Sepal.Length)) +
+  geom_boxplot() +
+  labs(
+    title = "Sepal Length Across Iris Species",
+    x = "Species",
+    y = "Sepal Length (cm)"
+  ) +
+  theme_minimal()
+```
+
+### Descriptive statistics
+
+```{r}
+iris %>%
+  group_by(Species) %>%
+  summarise(
+    n = n(),
+    mean_length = mean(Sepal.Length),
+    sd_length = sd(Sepal.Length)
+  )
+```
+
+The mean sepal length was lowest in setosa (5.01 cm), followed by versicolor (5.94 cm) and virginica (6.59 cm). The standard deviations were 0.352 cm, 0.516 cm, and 0.636 cm, respectively. These results show that virginica had the greatest average sepal length among the three species.
+
+## 6B.1.3 State the hypotheses
+
+- **Null hypothesis (H0):** The mean sepal length is equal among the three iris species.
+- **Alternative hypothesis (HA):** At least one iris species has a different mean sepal length.
+
+The significance level was set at 0.05.
+
+## 6B.1.4 Assess the assumptions and choose an appropriate test
+
+### Normality
+
+```{r}
+ggplot(iris, aes(sample = Sepal.Length)) +
+  stat_qq() +
+  stat_qq_line() +
+  facet_wrap(~ Species) +
+  labs(
+    title = "Normal Q-Q Plots of Sepal Length",
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal()
+
+by(
+  iris$Sepal.Length,
+  iris$Species,
+  shapiro.test
+)
+```
+
+The Shapiro-Wilk tests showed no significant evidence of a departure from normality for any of the three species. Setosa had W = 0.9777 and p = 0.4595, versicolor had W = 0.97784 and p = 0.4647, and virginica had W = 0.97118 and p = 0.2583. Since all p-values were greater than 0.05, the normality assumption was not rejected for the individual groups.
+
+### Homogeneity of variance
+
+```{r}
+leveneTest(
+  Sepal.Length ~ Species,
+  data = iris
+)
+```
+
+Levene's test showed a significant difference in variances among the three species, F(2, 147) = 6.3527, p = 0.002259. Therefore, the assumption of equal variances was violated.
+
+The one-way ANOVA and Kruskal-Wallis test were both performed to compare sepal length among the species. The Kruskal-Wallis test provides a rank-based comparison that does not require normally distributed data.
+
+## 6B.1.5 Perform one-way ANOVA
+
+```{r}
+anova_result <- aov(
+  Sepal.Length ~ Species,
+  data = iris
+)
+
+summary(anova_result)
+```
+
+The one-way ANOVA revealed a statistically significant difference in mean sepal length among the three iris species, F(2, 147) = 119.3, p < 0.001. Therefore, the null hypothesis was rejected. This indicates that at least one species had a different mean sepal length.
+
+However, the result should be interpreted with caution because Levene's test indicated that the equal-variance assumption was not satisfied.
+
+## 6B.1.6 Pairwise comparisons using Tukey's HSD
+
+```{r}
+TukeyHSD(anova_result)
+```
+
+Tukey's HSD test showed significant differences in sepal length between all three species:
+
+- Versicolor had a significantly greater mean sepal length than setosa, with a mean difference of 0.930 cm (95% CI: 0.686 to 1.174).
+- Virginica had a significantly greater mean sepal length than setosa, with a mean difference of 1.582 cm (95% CI: 1.338 to 1.826).
+- Virginica also had a significantly greater mean sepal length than versicolor, with a mean difference of 0.652 cm (95% CI: 0.408 to 0.896).
+
+All adjusted p-values were below 0.001. Thus, the pairwise comparisons indicate that each species differed significantly from the others in mean sepal length. These results should be considered alongside the violated equal-variance assumption.
+
+## 6B.1.7 Perform the Kruskal-Wallis test
+
+```{r}
+kruskal.test(
+  Sepal.Length ~ Species,
+  data = iris
+)
+```
+
+The Kruskal-Wallis test revealed a statistically significant difference in sepal length distributions among the three iris species, χ²(2) = 96.937, p < 0.001. Therefore, the null hypothesis was rejected. This supports the conclusion that sepal length differed among the species.
+
+## 6B.1.8 Pairwise comparisons after Kruskal-Wallis
+
+```{r}
+pairwise.wilcox.test(
+  iris$Sepal.Length,
+  iris$Species,
+  p.adjust.method = "bonferroni"
+)
+```
+
+The pairwise Wilcoxon tests with Bonferroni adjustment showed significant differences between all species:
+
+- Setosa and versicolor: p = 2.5 × 10⁻¹³
+- Setosa and virginica: p < 2 × 10⁻¹⁶
+- Versicolor and virginica: p = 1.8 × 10⁻⁶
+
+All pairwise comparisons were statistically significant. These results support the conclusion that sepal length distributions differed among all three iris species.
+
+## 6B.1.9 Summary of findings
+
+The descriptive statistics showed that virginica had the greatest mean sepal length, followed by versicolor and setosa. The Shapiro-Wilk tests did not indicate significant departures from normality in any species, but Levene's test revealed unequal variances.
+
+Both the one-way ANOVA and Kruskal-Wallis tests showed significant differences among the species. The pairwise comparisons also indicated that all three species differed significantly from one another. Since the equal-variance assumption was violated, the Kruskal-Wallis result provides a useful rank-based supporting analysis.
+
+# 6B.2 Comparing Means Across Two Factors
+
+## 6B.2.1 Research question
+
+Does supplement type, vitamin C dose, or their interaction significantly affect tooth length?
+
+## 6B.2.2 Load and inspect the data
+
+```{r}
+data("ToothGrowth")
+
+head(ToothGrowth)
+str(ToothGrowth)
+summary(ToothGrowth)
+nrow(ToothGrowth)
+table(ToothGrowth$supp, ToothGrowth$dose)
+
+ToothGrowth$dose <- as.factor(ToothGrowth$dose)
+str(ToothGrowth)
+```
+
+The `ToothGrowth` dataset contains 60 observations and three variables: tooth length (`len`), supplement type (`supp`), and vitamin C dose (`dose`). There were two supplement types, orange juice (OJ) and vitamin C (VC), and three dose levels: 0.5, 1, and 2 mg/day. Each combination had 10 observations.
+
+## 6B.2.3 State the hypotheses
+
+**Supplement effect**
+
+- H0: Mean tooth length does not differ between supplement types.
+- HA: Mean tooth length differs between supplement types.
+
+**Dose effect**
+
+- H0: Mean tooth length does not differ among dose levels.
+- HA: At least one dose level has a different mean tooth length.
+
+**Interaction effect**
+
+- H0: There is no interaction between supplement type and dose.
+- HA: There is an interaction between supplement type and dose.
+
+The significance level was set at 0.05.
+
+## 6B.2.4 Explore the data
+
+### Descriptive statistics
+
+```{r}
+ToothGrowth_summary <- ToothGrowth %>%
+  group_by(supp, dose) %>%
+  summarise(
+    n = n(),
+    mean_length = mean(len),
+    sd_length = sd(len),
+    .groups = "drop"
+  )
+
+ToothGrowth_summary
+```
+
+The mean tooth lengths were:
+
+| Supplement | Dose | Mean tooth length | SD |
+|---|---:|---:|---:|
+| OJ | 0.5 | 13.2 | 4.46 |
+| OJ | 1 | 22.7 | 3.91 |
+| OJ | 2 | 26.1 | 2.66 |
+| VC | 0.5 | 7.98 | 2.75 |
+| VC | 1 | 16.8 | 2.52 |
+| VC | 2 | 26.1 | 4.80 |
+
+The mean tooth length generally increased as the vitamin C dose increased for both supplement types. At doses of 0.5 and 1, the OJ group had greater mean tooth lengths than the VC group. At dose 2, both supplement groups had the same mean tooth length of 26.1.
+
+### Boxplot
+
+```{r}
+ggplot(ToothGrowth, aes(x = dose, y = len, fill = supp)) +
+  geom_boxplot() +
+  labs(
+    title = "Tooth Length by Supplement Type and Dose",
+    x = "Vitamin C Dose (mg/day)",
+    y = "Tooth Length",
+    fill = "Supplement Type"
+  ) +
+  theme_minimal()
+```
+
+### Interaction plot
+
+```{r}
+ggplot(ToothGrowth_summary, aes(
+  x = dose,
+  y = mean_length,
+  color = supp,
+  group = supp
+)) +
+  geom_line() +
+  geom_point(size = 3) +
+  labs(
+    title = "Interaction Between Supplement Type and Dose",
+    x = "Vitamin C Dose (mg/day)",
+    y = "Mean Tooth Length",
+    color = "Supplement Type"
+  ) +
+  theme_minimal()
+```
+
+The interaction plot shows that the difference in mean tooth length between supplement types changed across dose levels. The mean tooth lengths of the two supplement groups were equal at the highest dose.
+
+## 6B.2.5 Assess the assumptions
+
+### Fit the two-way ANOVA model
+
+```{r}
+tooth_aov <- aov(len ~ supp * dose, data = ToothGrowth)
+summary(tooth_aov)
+```
+
+### Examine the residuals
+
+```{r}
+hist(
+  residuals(tooth_aov),
+  main = "Histogram of ANOVA Residuals",
+  xlab = "Residuals"
+)
+
+qqnorm(residuals(tooth_aov))
+qqline(residuals(tooth_aov))
+
+shapiro.test(residuals(tooth_aov))
+```
+
+The Shapiro-Wilk test on the ANOVA residuals produced W = 0.98499 and p = 0.6694. Since the p-value was greater than 0.05, there was no significant evidence of a departure from normality. Thus, the normality assumption was not rejected.
+
+### Homogeneity of variance
+
+```{r}
+leveneTest(len ~ supp * dose, data = ToothGrowth)
+```
+
+Levene's test was not significant, F(5, 54) = 1.7086, p = 0.1484. Therefore, there was no significant evidence of unequal variances among the six supplement-dose combinations. The homogeneity of variance assumption was not rejected.
+
+## 6B.2.6 Perform two-way ANOVA
+
+```{r}
+summary(tooth_aov)
+```
+
+The two-way ANOVA showed that supplement type had a significant effect on tooth length, F(1, 54) = 15.572, p = 0.000231. Dose also had a significant effect, F(2, 54) = 92.000, p < 0.001.
+
+The interaction between supplement type and dose was also statistically significant, F(2, 54) = 4.107, p = 0.021860.
+
+Therefore, the null hypotheses for supplement type, dose, and their interaction were all rejected. The significant interaction indicates that the effect of supplement type on tooth length depends on the dose administered. Consequently, the main effects should not be interpreted as uniform differences across all dose levels.
+
+## 6B.2.7 Conduct follow-up comparisons
+
+### Compare supplement types
+
+```{r}
+TukeyHSD(tooth_aov, which = "supp")
+```
+
+The Tukey comparison showed that the VC group had a significantly lower mean tooth length than the OJ group by 3.7 units (95% CI: -5.580 to -1.820, adjusted p = 0.0002312).
+
+### Compare dose levels
+
+```{r}
+TukeyHSD(tooth_aov, which = "dose")
+```
+
+The Tukey comparisons showed significant differences among all dose levels:
+
+- Dose 1 had a significantly greater mean tooth length than dose 0.5, with a mean difference of 9.130 (95% CI: 6.362 to 11.898, p < 0.001).
+- Dose 2 had a significantly greater mean tooth length than dose 0.5, with a mean difference of 15.495 (95% CI: 12.727 to 18.263, p < 0.001).
+- Dose 2 also had a significantly greater mean tooth length than dose 1, with a mean difference of 6.365 (95% CI: 3.597 to 9.133, p = 2.7 × 10⁻⁶).
+
+All dose comparisons were statistically significant.
+
+These Tukey comparisons examine the overall supplement and dose effects. Since the interaction was significant, they do not establish which supplement differences are significant within each individual dose level. The descriptive results show that the supplement groups had equal means at dose 2, despite the significant overall supplement effect.
+
+## 6B.2.8 Summary of findings
+
+The two-way ANOVA showed significant effects of supplement type and vitamin C dose on tooth length. Their interaction was also significant, indicating that the effect of supplement type varied depending on the dose.
+
+The descriptive statistics showed that tooth length generally increased with increasing dose. Orange juice had greater mean tooth lengths than vitamin C at doses 0.5 and 1, while both supplements had the same mean at dose 2. The residual normality and equal-variance assumptions were not rejected based on the tests conducted.
+
+# 6B.3 Practice Activities
+
+# 6B.3.1 One-Way ANOVA Using airquality
+
+**Research question:** Does ozone concentration differ among the five months?
+
+## 1. Inspect and prepare the data
+
+```{r}
+data("airquality")
+
+head(airquality)
+str(airquality)
+
+ozone_month <- airquality %>%
+  filter(!is.na(Ozone))
+
+ozone_month <- ozone_month %>%
+  mutate(
+    Month = factor(
+      Month,
+      levels = 5:9,
+      labels = c("May", "June", "July", "August", "September")
+    )
+  )
+
+str(ozone_month)
+nrow(ozone_month)
+table(ozone_month$Month)
+```
+
+The original `airquality` dataset contained 153 observations. After removing observations with missing ozone measurements, 116 observations remained. The monthly sample sizes were 26 for May, 9 for June, 26 for July, 26 for August, and 29 for September.
+
+## 2. Explore the distribution
+
+### Boxplot
+
+```{r}
+ggplot(ozone_month, aes(x = Month, y = Ozone)) +
+  geom_boxplot() +
+  labs(
+    title = "Ozone Concentration by Month",
+    x = "Month",
+    y = "Ozone (ppb)"
+  ) +
+  theme_minimal()
+```
+
+### Descriptive statistics
+
+```{r}
+ozone_month %>%
+  group_by(Month) %>%
+  summarise(
+    n = n(),
+    mean_ozone = mean(Ozone),
+    sd_ozone = sd(Ozone)
+  )
+```
+
+The mean ozone concentrations varied across the five months. August had the highest mean concentration at 60.0 ppb, closely followed by July at 59.1 ppb. June had a mean of 29.4 ppb, September had 31.4 ppb, and May had the lowest mean at 23.6 ppb.
+
+## 3. State the hypotheses
+
+- **Null hypothesis (H0):** Mean ozone concentration is equal across the five months.
+- **Alternative hypothesis (HA):** At least one month has a different mean ozone concentration.
+
+The significance level was set at 0.05.
+
+## 4. Assess the assumptions
+
+### Histograms and Q-Q plots
+
+```{r}
+ggplot(ozone_month, aes(x = Ozone)) +
+  geom_histogram(bins = 10, color = "white") +
+  facet_wrap(~ Month) +
+  labs(
+    title = "Distribution of Ozone by Month",
+    x = "Ozone (ppb)",
+    y = "Number of Days"
+  ) +
+  theme_minimal()
+
+ggplot(ozone_month, aes(sample = Ozone)) +
+  stat_qq() +
+  stat_qq_line() +
+  facet_wrap(~ Month) +
+  labs(
+    title = "Normal Q-Q Plots of Ozone by Month",
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal()
+```
+
+### Shapiro-Wilk test
+
+```{r}
+by(
+  ozone_month$Ozone,
+  ozone_month$Month,
+  shapiro.test
+)
+```
+
+The Shapiro-Wilk tests showed significant departures from normality in May (W = 0.71401, p = 8.294 × 10⁻⁶) and September (W = 0.78373, p = 4.325 × 10⁻⁵). The results for June (p = 0.0628), July (p = 0.8669), and August (p = 0.09032) were not significant.
+
+Therefore, the normality assumption was not supported across all five months.
+
+### Levene's test
+
+```{r}
+leveneTest(
+  Ozone ~ Month,
+  data = ozone_month
+)
+```
+
+Levene's test showed a significant difference in variances among the months, F(4, 111) = 3.9558, p = 0.004863. Thus, the homogeneity of variance assumption was violated.
+
+Because the normality and equal-variance assumptions were not satisfied, the Kruskal-Wallis test was also used to compare ozone concentration distributions among the months.
+
+## 5. Conduct and report the analysis
+
+### One-way ANOVA
+
+```{r}
+ozone_aov <- aov(Ozone ~ Month, data = ozone_month)
+
+summary(ozone_aov)
+TukeyHSD(ozone_aov)
+```
+
+The one-way ANOVA showed a statistically significant difference in mean ozone concentration among the five months, F(4, 111) = 8.536, p = 4.83 × 10⁻⁶. However, this result should be interpreted cautiously because the normality and homogeneity of variance assumptions were violated.
+
+The Tukey HSD comparisons identified the following significant differences:
+
+- July had significantly higher mean ozone concentration than May (mean difference = 35.50 ppb, adjusted p = 0.0002795).
+- August had significantly higher mean ozone concentration than May (mean difference = 36.35 ppb, adjusted p = 0.0001869).
+- September had significantly lower mean ozone concentration than July (mean difference = -27.67 ppb, adjusted p = 0.0061535).
+- September had significantly lower mean ozone concentration than August (mean difference = -28.51 ppb, adjusted p = 0.0043387).
+
+The other pairwise comparisons were not statistically significant. These Tukey results should be interpreted cautiously because the ANOVA assumptions were not satisfied.
+
+### Kruskal-Wallis test
+
+```{r}
+kruskal.test(Ozone ~ Month, data = ozone_month)
+```
+
+The Kruskal-Wallis test showed a statistically significant difference in ozone concentration distributions among the five months, χ²(4) = 29.267, p = 6.901 × 10⁻⁶. Therefore, the null hypothesis was rejected. This indicates that ozone concentration distributions differed significantly among the months.
+
+### Pairwise Wilcoxon tests with Bonferroni adjustment
+
+```{r}
+pairwise.wilcox.test(
+  ozone_month$Ozone,
+  ozone_month$Month,
+  p.adjust.method = "bonferroni"
+)
+```
+
+The pairwise Wilcoxon tests with Bonferroni adjustment identified four significant differences:
+
+- July and May: p = 0.00011
+- August and May: p = 0.00061
+- September and July: p = 0.00528
+- September and August: p = 0.02715
+
+The comparisons between June and May, July and June, August and June, and September and May or June were not statistically significant. The comparison between August and July was also not significant.
+
+## 6. Summary of findings
+
+Ozone concentration distributions differed significantly among the five months based on the Kruskal-Wallis test. July and August had significantly higher ozone concentrations than May, while September had significantly lower ozone concentrations than July and August.
+
+The assumption tests showed that the ozone data did not satisfy normality across all months and had unequal variances. The Kruskal-Wallis and Bonferroni-adjusted pairwise Wilcoxon tests therefore provide a rank-based analysis of the differences among months.
+
+# 6B.3.2 Two-Way ANOVA Using Simulated Plant Growth Data
+
+**Research question:** Do fertilizer type, irrigation level, and their interaction affect plant growth?
+
+## 1. Generate the simulated dataset
+
+```{r}
+set.seed(123)
+
+n <- 60
+
+fertilizer <- rep(
+  c("Fertilizer A", "Fertilizer B", "Fertilizer C"),
+  each = n / 3
+)
+
+irrigation <- rep(
+  rep(c("Low", "High"), each = n / 6),
+  3
+)
+
+plant_growth <- rnorm(n, mean = 5, sd = 1) +
+  ifelse(
+    fertilizer == "Fertilizer B", 0.5,
+    ifelse(fertilizer == "Fertilizer C", 1, 0)
+  ) +
+  ifelse(irrigation == "High", 1, 0)
+
+plant_data <- data.frame(
+  Fertilizer = fertilizer,
+  Irrigation = irrigation,
+  Plant_Growth = plant_growth
+)
+
+plant_data$Fertilizer <- as.factor(plant_data$Fertilizer)
+plant_data$Irrigation <- as.factor(plant_data$Irrigation)
+```
+
+## 2. Load and inspect the data
+
+```{r}
+head(plant_data)
+str(plant_data)
+table(plant_data$Fertilizer, plant_data$Irrigation)
+```
+
+The simulated dataset contained 60 observations and three variables: fertilizer type, irrigation level, and plant growth. There were three fertilizer types and two irrigation levels, with 10 observations in each of the six treatment combinations.
+
+## 3. Explore the data
+
+### Descriptive statistics
+
+```{r}
+plant_summary <- plant_data %>%
+  group_by(Fertilizer, Irrigation) %>%
+  summarise(
+    n = n(),
+    mean_growth = mean(Plant_Growth),
+    sd_growth = sd(Plant_Growth),
+    .groups = "drop"
+  )
+
+plant_summary
+```
+
+The mean plant growth values were:
+
+| Fertilizer | Irrigation | Mean growth (cm) | SD |
+|---|---|---:|---:|
+| A | High | 6.21 | 1.04 |
+| A | Low | 5.07 | 0.954 |
+| B | High | 6.82 | 0.527 |
+| B | Low | 5.08 | 0.931 |
+| C | High | 7.22 | 0.856 |
+| C | Low | 5.99 | 1.08 |
+
+The highest mean growth was observed in Fertilizer C under high irrigation (7.22 cm). The lowest mean was observed in Fertilizer A under low irrigation (5.07 cm). Across all three fertilizer types, mean plant growth was higher under high irrigation than under low irrigation.
+
+### Boxplot
+
+```{r}
+ggplot(plant_data, aes(x = Fertilizer, y = Plant_Growth, fill = Irrigation)) +
+  geom_boxplot() +
+  labs(
+    title = "Plant Growth by Fertilizer Type and Irrigation Level",
+    x = "Fertilizer Type",
+    y = "Plant Growth (cm)",
+    fill = "Irrigation Level"
+  ) +
+  theme_minimal()
+```
+
+### Interaction plot
+
+```{r}
+ggplot(plant_summary, aes(
+  x = Irrigation,
+  y = mean_growth,
+  color = Fertilizer,
+  group = Fertilizer
+)) +
+  geom_line() +
+  geom_point(size = 3) +
+  labs(
+    title = "Interaction Between Fertilizer Type and Irrigation Level",
+    x = "Irrigation Level",
+    y = "Mean Plant Growth (cm)",
+    color = "Fertilizer Type"
+  ) +
+  theme_minimal()
+```
+
+## 4. State the hypotheses
+
+**Fertilizer effect**
+
+- H0: Mean plant growth does not differ among fertilizer types.
+- HA: At least one fertilizer type has a different mean plant growth.
+
+**Irrigation effect**
+
+- H0: Mean plant growth does not differ between irrigation levels.
+- HA: Mean plant growth differs between irrigation levels.
+
+**Interaction effect**
+
+- H0: There is no interaction between fertilizer type and irrigation level.
+- HA: There is an interaction between fertilizer type and irrigation level.
+
+The significance level was set at 0.05.
+
+## 5. Assess the assumptions
+
+### Fit the two-way ANOVA model
+
+```{r}
+plant_aov <- aov(
+  Plant_Growth ~ Fertilizer * Irrigation,
+  data = plant_data
+)
+```
+
+### Examine the residuals
+
+```{r}
+hist(
+  residuals(plant_aov),
+  main = "Histogram of ANOVA Residuals",
+  xlab = "Residuals"
+)
+
+qqnorm(residuals(plant_aov))
+qqline(residuals(plant_aov))
+```
+
+### Shapiro-Wilk test
+
+```{r}
+shapiro.test(residuals(plant_aov))
+```
+
+The Shapiro-Wilk test produced W = 0.98084 and p = 0.4651. Since the p-value was greater than 0.05, there was no significant evidence of a departure from normality in the residuals. Thus, the normality assumption was not rejected.
+
+### Levene's test
+
+```{r}
+leveneTest(
+  Plant_Growth ~ Fertilizer * Irrigation,
+  data = plant_data
+)
+```
+
+Levene's test was not significant, F(5, 54) = 0.3917, p = 0.8524. Therefore, there was no significant evidence of unequal variances among the six treatment combinations. The homogeneity of variance assumption was not rejected.
+
+## 6. Perform the statistical analysis
+
+```{r}
+summary(plant_aov)
+```
+
+The two-way ANOVA showed that fertilizer type had a significant effect on plant growth, F(2, 54) = 5.789, p = 0.00528. Therefore, the null hypothesis for fertilizer type was rejected.
+
+Irrigation level also had a significant effect on plant growth, F(1, 54) = 33.552, p = 3.66 × 10⁻⁷. Therefore, the null hypothesis for irrigation level was rejected.
+
+However, the interaction between fertilizer type and irrigation level was not statistically significant, F(2, 54) = 0.646, p = 0.52801. Therefore, the null hypothesis of no interaction was not rejected. This indicates that the effect of fertilizer type on plant growth did not significantly depend on the irrigation level.
+
+## 7. Follow-up comparisons
+
+### Compare fertilizer types
+
+```{r}
+TukeyHSD(plant_aov, which = "Fertilizer")
+```
+
+The Tukey HSD test showed that Fertilizer C produced significantly greater plant growth than Fertilizer A, with a mean difference of 0.965 cm (95% CI: 0.267 to 1.663, adjusted p = 0.0044088).
+
+There was no significant difference between Fertilizer B and Fertilizer A (p = 0.5428083), or between Fertilizer C and Fertilizer B (p = 0.0687859).
+
+### Compare irrigation levels
+
+```{r}
+TukeyHSD(plant_aov, which = "Irrigation")
+```
+
+The Tukey comparison showed that plant growth under low irrigation was significantly lower than under high irrigation, with a mean difference of -1.370 cm (95% CI: -1.845 to -0.896, adjusted p = 4 × 10⁻⁷).
+
+Therefore, high irrigation produced significantly greater plant growth than low irrigation.
+
+## 8. Summary of findings
+
+The two-way ANOVA showed that fertilizer type and irrigation level significantly affected plant growth. Fertilizer C produced significantly greater growth than Fertilizer A, while no significant difference was found between Fertilizers A and B or between Fertilizers B and C.
+
+High irrigation resulted in significantly greater plant growth than low irrigation. However, the interaction between fertilizer type and irrigation level was not significant, indicating that the effect of fertilizer type did not significantly change across irrigation levels.
+
+The Shapiro-Wilk and Levene's tests showed no significant evidence of violations of the normality and homogeneity of variance assumptions. Thus, the two-way ANOVA was considered appropriate for this simulated dataset.
+
+# Overall Conclusion
+
+The analyses demonstrated the use of one-way ANOVA, two-way ANOVA, and their nonparametric alternatives in comparing groups.
+
+For the iris dataset, sepal length differed significantly among the three species. For the `ToothGrowth` dataset, supplement type, vitamin C dose, and their interaction significantly affected tooth length. For the `airquality` dataset, ozone concentration differed significantly among the five months, with the Kruskal-Wallis test providing a rank-based analysis because the assumptions of normality and equal variances were not satisfied. Finally, the simulated plant growth dataset showed significant effects of fertilizer type and irrigation level, but no significant interaction between the two factors.
