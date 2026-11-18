@@ -1,0 +1,348 @@
+---
+title: "Bajade_Denisse_Lab7"
+author: "Denisse Gabrielle C. Bajade"
+date: "2026-11-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(abd)
+library(ggplot2)
+library(dplyr)
+```
+
+# Student Information
+
+**Name:** Denisse Gabrielle C. Bajade  
+**Course:** BS Biology  
+**Laboratory Exercise:** 7
+
+**GitHub:** <https://github.com/dcbajade/BIO118>
+
+# 7.1 Correlation Analysis: Crickets
+
+## 7.1.1 Loading and Exploring the Data
+
+```{r}
+data("Crickets")
+
+head(Crickets)
+str(Crickets)
+```
+
+The Crickets dataset contains 41 observations and two numerical variables: sperm viability and lysozyme activity.
+
+## 7.1.2 Visualizing the Relationship
+
+```{r}
+ggplot(Crickets, aes(x = sperm.viability, y = lysozyme)) +
+  geom_point() +
+  labs(
+    title = "Sperm Viability and Lysozyme Activity in Crickets",
+    x = "Sperm Viability",
+    y = "Lysozyme Activity"
+  ) +
+  theme_minimal()
+```
+
+**Guide Question 1. Describe the direction, form, and strength of the relationship. Are there any unusual observations?**
+
+The scatterplot shows a generally negative relationship between sperm viability and lysozyme activity. As sperm viability increases, lysozyme activity tends to decrease. However, the points are widely scattered, so the relationship does not appear very strong. Most observations are concentrated around sperm viability values of 80 to 85. There are also a few points that stand out, such as the observation with a lysozyme activity of approximately 20.5 at a sperm viability of 80.
+
+## 7.1.3 Pearson and Spearman Correlation
+
+```{r}
+cor_pearson <- cor.test(
+  Crickets$sperm.viability,
+  Crickets$lysozyme,
+  method = "pearson"
+)
+
+cor_pearson
+
+cor_spearman <- cor.test(
+  Crickets$sperm.viability,
+  Crickets$lysozyme,
+  method = "spearman",
+  exact = FALSE
+)
+
+cor_spearman
+```
+
+**Guide Question 2. Compare the Pearson and Spearman correlation coefficients and their p-values. Do they lead to the same conclusion?**
+
+The Pearson correlation coefficient was -0.3444, with a p-value of 0.02748. This indicates a weak negative linear relationship between sperm viability and lysozyme activity. Since the p-value is below 0.05, the relationship is statistically significant.
+
+The Spearman correlation coefficient was -0.3046, with a p-value of 0.05285. This also indicates a negative relationship, but the result is not statistically significant at the 0.05 level.
+
+Both methods show a negative association, but they do not lead to exactly the same statistical conclusion. Pearson indicates a significant linear relationship, while Spearman does not provide sufficient evidence of a significant monotonic relationship at the 0.05 level.
+
+**Guide Question 3. Does correlation imply causation? Explain.**
+
+No. Correlation only describes the relationship between two variables. It does not establish that one variable directly causes changes in the other. Other factors may influence both sperm viability and lysozyme activity. Therefore, the observed negative relationship does not prove that changes in sperm viability cause changes in lysozyme activity.
+
+# 7.2 Simple Linear Regression: Rattlesnakes
+
+## 7.2.1 Loading and Exploring the Data
+
+```{r}
+data("Rattlesnakes")
+
+head(Rattlesnakes)
+str(Rattlesnakes)
+
+colSums(is.na(Rattlesnakes))
+```
+
+The Rattlesnakes dataset contains 17 observations and two numerical variables: meal size and temperature change. There are no missing values in either variable.
+
+## 7.2.2 Visualizing the Relationship
+
+```{r}
+ggplot(Rattlesnakes, aes(x = meal.size, y = temp.change)) +
+  geom_point() +
+  labs(
+    title = "Meal Size and Temperature Change in Rattlesnakes",
+    x = "Meal Size",
+    y = "Temperature Change"
+  ) +
+  theme_minimal()
+```
+
+**Guide Question 4. Identify the predictor and response variables. Describe the relationship shown in the scatterplot. Is a linear model suitable?**
+
+Meal size is the predictor variable, while temperature change is the response variable. The scatterplot shows a positive relationship. As meal size increases, temperature change also tends to increase. The points generally follow an upward linear pattern, suggesting that a simple linear regression model is suitable for describing their relationship.
+
+## 7.2.3 Fitting the Linear Regression Model
+
+```{r}
+model <- lm(temp.change ~ meal.size, data = Rattlesnakes)
+
+Rattlesnakes$fitted <- fitted(model)
+Rattlesnakes$residuals <- residuals(model)
+
+model
+```
+
+**Guide Question 5. Write the fitted regression equation. Interpret the intercept and slope. What is the biological meaning of the intercept?**
+
+The fitted regression equation is:
+
+\[
+\widehat{\text{Temperature Change}}
+= 0.31956 + 0.027384(\text{Meal Size})
+\]
+
+The intercept is 0.31956. This is the predicted temperature change when meal size is zero. Biologically, it represents the estimated temperature change when no meal is consumed.
+
+The slope is 0.027384. This means that for every one-unit increase in meal size, the predicted temperature change increases by approximately 0.0274 units.
+
+## 7.2.4 Evaluating the Regression Model
+
+```{r}
+summary(model)
+```
+
+**Guide Question 6. Is the slope statistically significant? State the null and alternative hypotheses, decision, and conclusion.**
+
+The hypotheses are:
+
+- H₀: There is no linear relationship between meal size and temperature change (β₁ = 0).
+- Hₐ: There is a linear relationship between meal size and temperature change (β₁ ≠ 0).
+
+The p-value for meal size is 9.38 × 10⁻⁷, which is less than 0.05. Therefore, the null hypothesis is rejected. There is sufficient evidence of a significant positive linear relationship between meal size and temperature change in rattlesnakes.
+
+**Guide Question 7. Interpret the R-squared and adjusted R-squared values.**
+
+The R-squared value is 0.808, while the adjusted R-squared value is 0.7952. This means that approximately 80.8% of the variation in temperature change is explained by meal size in the fitted regression model. The remaining 19.2% is not explained by the model and may be associated with other factors or random variation.
+
+## 7.2.5 Visualizing the Regression Line
+
+```{r}
+ggplot(Rattlesnakes, aes(x = meal.size, y = temp.change)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(
+    title = "Linear Regression of Meal Size and Temperature Change",
+    x = "Meal Size",
+    y = "Temperature Change"
+  ) +
+  theme_minimal()
+```
+
+**Guide Question 8. What does the shaded area represent? Why do some points fall outside it?**
+
+The shaded area represents the 95% confidence interval for the estimated regression line. It shows the uncertainty around the estimated mean temperature change at different meal sizes. Individual observations may fall outside this area because it represents uncertainty in the mean response, not the range where all individual observations are expected to fall.
+
+## 7.2.6 Checking Model Assumptions
+
+```{r}
+head(Rattlesnakes)
+
+ggplot(Rattlesnakes, aes(x = fitted, y = residuals)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(
+    title = "Residuals vs Fitted Values",
+    x = "Fitted Values",
+    y = "Residuals"
+  ) +
+  theme_minimal()
+
+plot(model, which = 2)
+```
+
+**Guide Question 9. Examine the residuals-versus-fitted plot and the normal Q-Q plot. What do they indicate about the model assumptions?**
+
+The residuals-versus-fitted plot shows that the residuals fall on both sides of zero, but they are not completely randomly scattered. Some clustering is visible, along with a noticeably negative residual at the highest fitted value. This suggests that the residual pattern should be examined with caution.
+
+The normal Q-Q plot shows that most points generally follow the reference line, although there are some deviations at both ends. This suggests that the residuals are approximately normally distributed, but slight departures from normality may be present.
+
+Overall, the diagnostic plots do not show a severe departure from the assumptions, but some irregularities are present. Independence of observations must also be considered based on how the data were collected.
+
+## 7.2.7 Predicting Temperature Change
+
+```{r}
+range(Rattlesnakes$meal.size)
+
+new_data <- data.frame(meal.size = 10)
+
+predict(
+  model,
+  newdata = new_data,
+  interval = "confidence"
+)
+
+predict(
+  model,
+  newdata = new_data,
+  interval = "prediction"
+)
+```
+
+**Guide Question 10. Predict the temperature change for a meal size of 10. Explain the difference between the confidence interval and prediction interval.**
+
+For a meal size of 10, the predicted temperature change is 0.5934.
+
+The 95% confidence interval is 0.4574 to 0.7294. This estimates the range of the mean temperature change for rattlesnakes with a meal size of 10.
+
+The 95% prediction interval is 0.1634 to 1.0234. This estimates the range where the temperature change of an individual rattlesnake with a meal size of 10 is expected to fall. The prediction interval is wider because it accounts for both uncertainty in the estimated mean and variation among individual observations.
+
+# 7.3 Practice: Temperature and Ozone Concentration
+
+## Research Question
+
+Is temperature associated with ozone concentration, and can temperature be used to predict ozone concentration?
+
+## 7.3.1 Loading and Preparing the Data
+
+```{r}
+data("airquality")
+
+airquality_clean <- airquality %>%
+  select(Ozone, Temp) %>%
+  filter(!is.na(Ozone), !is.na(Temp))
+
+head(airquality_clean)
+str(airquality_clean)
+```
+
+The cleaned dataset contains 116 observations with complete values for ozone concentration and temperature.
+
+## 7.3.2 Visualizing the Relationship
+
+```{r}
+ggplot(airquality_clean, aes(x = Temp, y = Ozone)) +
+  geom_point() +
+  labs(
+    title = "Temperature and Ozone Concentration",
+    x = "Temperature (°F)",
+    y = "Ozone Concentration"
+  ) +
+  theme_minimal()
+```
+
+The scatterplot shows a positive relationship between temperature and ozone concentration. As temperature increases, ozone concentration generally tends to increase. However, the points become more widely scattered at higher temperatures, and several observations have unusually high ozone concentrations.
+
+## 7.3.3 Pearson Correlation
+
+```{r}
+cor_airquality <- cor.test(
+  airquality_clean$Temp,
+  airquality_clean$Ozone,
+  method = "pearson"
+)
+
+cor_airquality
+```
+
+The Pearson correlation coefficient is 0.6984, indicating a moderately strong positive linear relationship between temperature and ozone concentration. The p-value is less than 2.2 × 10⁻¹⁶, which is below 0.05. Therefore, the null hypothesis of no linear correlation is rejected. There is sufficient evidence of a significant positive correlation between temperature and ozone concentration.
+
+## 7.3.4 Simple Linear Regression
+
+```{r}
+ozone_model <- lm(Ozone ~ Temp, data = airquality_clean)
+
+summary(ozone_model)
+```
+
+The fitted regression equation is:
+
+\[
+\widehat{\text{Ozone}}
+= -146.9955 + 2.4287(\text{Temperature})
+\]
+
+The slope is 2.4287. This means that for every 1°F increase in temperature, the predicted ozone concentration increases by approximately 2.43 units on average.
+
+The intercept is -146.9955. This is the predicted ozone concentration when temperature is 0°F. However, this value does not have a meaningful practical interpretation because 0°F is outside the observed temperature range of the dataset.
+
+The p-value for temperature is less than 2 × 10⁻¹⁶, which is below 0.05. Therefore, the null hypothesis that the slope is zero is rejected. Temperature is a significant predictor of ozone concentration.
+
+The R-squared value is 0.4877. This means that approximately 48.77% of the variation in ozone concentration is explained by temperature in the fitted linear regression model. The remaining 51.23% is not explained by the model and may be associated with other factors or random variation.
+
+### Visualizing the Regression Line
+
+```{r}
+ggplot(airquality_clean, aes(x = Temp, y = Ozone)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(
+    title = "Linear Regression of Temperature and Ozone Concentration",
+    x = "Temperature (°F)",
+    y = "Ozone Concentration"
+  ) +
+  theme_minimal()
+```
+
+## 7.3.5 Checking Model Assumptions
+
+```{r}
+plot(ozone_model, which = 1)
+
+plot(ozone_model, which = 2)
+```
+
+The residuals-versus-fitted plot shows a curved pattern rather than a completely random distribution around zero. The spread of the residuals also appears larger at higher fitted values. This suggests that the linearity and constant variance assumptions may not be fully satisfied.
+
+The normal Q-Q plot shows noticeable deviations from the reference line, particularly in the upper tail. Several observations have unusually large positive residuals. This suggests that the residuals are not normally distributed.
+
+Overall, the diagnostic plots indicate that some regression assumptions may be violated. Although temperature is a significant predictor of ozone concentration, the model should be interpreted with caution.
+
+## 7.3.6 Predicting Ozone Concentration at 80°F
+
+```{r}
+new_temp <- data.frame(Temp = 80)
+
+predict(
+  ozone_model,
+  newdata = new_temp,
+  interval = "prediction"
+)
+```
+
+At a temperature of 80°F, the predicted ozone concentration is 47.3008.
+
+The 95% prediction interval is 0.1106 to 94.4909. This means that the ozone concentration of an individual observation at 80°F is expected to fall within this interval based on the fitted model. The wide interval indicates considerable variation in individual ozone concentration values at this temperature.
